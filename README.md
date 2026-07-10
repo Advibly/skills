@@ -16,23 +16,42 @@ advibly-skills/
 | Skill | What it does |
 |-------|--------------|
 | [`advibly-ugc-ads`](./advibly-ugc-ads/) | Generates a complete multi-shot UGC video ad from a brand plus an ad angle: a realistic AI creator image (gpt-image-2), a 5-shot direct response script, a user-approved storyboard of start frames, one vertical clip per shot animated from its frame with native spoken dialogue (Gemini Omni Flash), then assembles the clips into a finished ad. Five preset angles: testimonial, car/on-the-go, unboxing, lifestyle demo, problem-solution. |
+| [`advibly-collage-motion`](./advibly-collage-motion/) | Decode-then-animate pipeline for halftone paper-collage and stop-motion-graphic ads. Reverse-engineers a reference image into a field-editable JSON spec, generates on-brand stills with nano-banana-2, then animates them into assemble-from-empty motion with Gemini Omni Flash (empty color field, cut-out pieces slide in and snap into place, native audio). Labels are burned in at generation, faithful to the decoded color field by default. |
 
-## Setup
+## Install
 
-1. Connect the Advibly MCP to Claude: [advibly.com/mcp-setup](https://advibly.com/mcp-setup)
-2. Install a skill. The quickest way, for any supported agent (Claude Code, Claude Desktop, Cursor, and more):
-   ```bash
-   npx skills add Advibly/advibly-skills
-   ```
-   This downloads the skill from this repo and wires it into your agent. To pick a specific skill in a multi-skill repo, pass `-s <skill-name>`, e.g. `npx skills add Advibly/advibly-skills -s advibly-ugc-ads`.
+First, connect the Advibly MCP to Claude: [advibly.com/mcp-setup](https://advibly.com/mcp-setup).
 
-   Prefer to install by hand?
-   - **Claude Desktop / Cowork**: Settings → Skills → Install, and select the skill's folder
-   - **Claude Code**: copy the skill's folder into `~/.claude/skills/`, e.g.
-     ```bash
-     cp -R advibly-ugc-ads ~/.claude/skills/
-     ```
-3. Ask Claude for what you want, e.g. `Make a UGC ad for my brand. Angle: testimonial.`
+Then install a skill. `npx skills` works for any supported agent (Claude Code, Claude Desktop, Cursor, and more) and pulls straight from this GitHub repo:
+
+**advibly-ugc-ads**
+```bash
+npx skills add Advibly/advibly-skills -s advibly-ugc-ads
+```
+
+**advibly-collage-motion**
+```bash
+npx skills add Advibly/advibly-skills -s advibly-collage-motion
+```
+
+Install both at once:
+```bash
+npx skills add Advibly/advibly-skills
+```
+
+### Manual install
+
+Prefer to install by hand?
+
+- **Claude Desktop / Cowork**: Settings → Skills → Install, and select the skill's folder.
+- **Claude Code**: clone the repo and copy the skill folder into `~/.claude/skills/`:
+  ```bash
+  git clone https://github.com/Advibly/advibly-skills.git
+  cp -R advibly-skills/advibly-ugc-ads ~/.claude/skills/
+  cp -R advibly-skills/advibly-collage-motion ~/.claude/skills/
+  ```
+
+Then ask Claude for what you want, e.g. `Make a UGC ad for my brand. Angle: testimonial.` or `Reverse-engineer this collage reference and animate it.`
 
 ## Requirements
 
