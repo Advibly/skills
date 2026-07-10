@@ -1,0 +1,5 @@
+# Packaged skill build artifacts
+dist/
+
+# macOS
+.DS_Store
