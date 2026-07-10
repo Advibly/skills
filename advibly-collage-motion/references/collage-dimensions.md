@@ -1,6 +1,6 @@
 # Collage Dimensions: Vocabulary, Taxonomies, and a Worked Example
 
-Use this when decoding a reference or calibrating a JSON spec. Correct, specific terminology is what makes a spec reproducible on nano-banana-2. "Soft paper look" is weaker than "matte uncoated paper field with fine fiber grain, cut-outs at 50 lpi halftone, 6px drop shadow at 30 percent opacity". Reach for the specific name. No em dashes in any output you produce from this.
+Use this when decoding a reference or calibrating a JSON spec. Correct, specific terminology is what makes a spec reproducible on gpt-image-2. "Soft paper look" is weaker than "matte uncoated paper field with fine fiber grain, cut-outs at 50 lpi halftone, 6px drop shadow at 30 percent opacity". Reach for the specific name. No em dashes in any output you produce from this.
 
 ## Table of contents
 
@@ -73,7 +73,7 @@ Each scene carries one concept or visual pun, not just decoration. The idea is t
 
 ## 7. Label and typography
 
-Labels are burned in at generation by nano-banana-2, never overlaid afterward (Advibly has no overlay tool). Capture:
+Labels are burned in at generation by the image model, never overlaid afterward (Advibly has no overlay tool). Capture:
 
 - **content**: the 2 to 4 word scene label.
 - **font_character**: grotesque sans, geometric sans, condensed, serif, hand-lettered.
@@ -81,7 +81,7 @@ Labels are burned in at generation by nano-banana-2, never overlaid afterward (A
 - **placement**: lower third, top-left, baseline-aligned to an element.
 - **treatment**: solid flat color, knockout (field shows through letters), halftone-filled, slight letterpress deboss.
 
-If labels degrade across rerolls, raise `num_images` (up to 4) and pick the clean one, or simplify the label. If a scene's label still will not hold, switch that one scene to `gpt-image-2` or `seedream-5-pro` (stronger native text); do not reach for any overlay step.
+If labels degrade across rerolls, raise `num_images` (up to 4) and pick the clean one, or simplify the label. gpt-image-2 (the default model) is the strongest at native text; if a scene's label still will not hold, try `seedream-5-pro` for that one scene; do not reach for any overlay step.
 
 ## 8. Mood vocabulary
 

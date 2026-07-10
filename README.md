@@ -16,7 +16,7 @@ advibly-skills/
 | Skill | What it does |
 |-------|--------------|
 | [`advibly-ugc-ads`](./advibly-ugc-ads/) | Generates a complete multi-shot UGC video ad from a brand plus an ad angle: a realistic AI creator image (gpt-image-2), a 5-shot direct response script, a user-approved storyboard of start frames, one vertical clip per shot animated from its frame with native spoken dialogue (Gemini Omni Flash), then assembles the clips into a finished ad. Five preset angles: testimonial, car/on-the-go, unboxing, lifestyle demo, problem-solution. |
-| [`advibly-collage-motion`](./advibly-collage-motion/) | Decode-then-animate pipeline for halftone paper-collage and stop-motion-graphic ads. Reverse-engineers a reference image into a field-editable JSON spec, generates on-brand stills with nano-banana-2, then animates them into assemble-from-empty motion with Gemini Omni Flash (empty color field, cut-out pieces slide in and snap into place, native audio). Labels are burned in at generation, faithful to the decoded color field by default. |
+| [`advibly-collage-motion`](./advibly-collage-motion/) | Decode-then-animate pipeline for halftone paper-collage and stop-motion-graphic ads. Reverse-engineers a reference image into a field-editable JSON spec, generates on-brand stills with gpt-image-2 (store products locked via catalog photo references), then animates them into a default 4-scene set of 8s assemble-from-empty clips with Gemini Omni Flash (empty color field, cut-out pieces slide in and snap into place, native audio). Labels are burned in at generation, faithful to the decoded color field by default. |
 
 ## Install
 

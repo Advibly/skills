@@ -1,7 +1,7 @@
 ---
 name: advibly-collage-motion
 description: >
-  End-to-end Advibly pipeline for halftone paper-collage and stop-motion-graphic ads. Decodes a reference image into a field-editable JSON spec, generates on-brand stills with nano-banana-2, then animates them into assemble-from-empty motion with Gemini Omni Flash, all on the Advibly MCP. Trigger whenever the user pastes a reference to decode, replicate, or make "similar"; asks for a halftone, paper-cut, paper-collage, editorial-collage, or stop-motion-graphic look; wants a still or product turned into an animated ad, explainer, or motion graphic; or says "analyze this", "break this down", "reverse-engineer this look", "animate this", "assemble it", or "make a collage ad". Use even when the user does not say "skill" but the visual is clearly the halftone-collage look or the request is decode-then-animate. Default image nano-banana-2, default video Gemini Omni Flash.
+  End-to-end Advibly pipeline for halftone paper-collage and stop-motion-graphic ads. Decodes a reference image into a field-editable JSON spec, generates on-brand stills with gpt-image-2, then animates them into assemble-from-empty motion with Gemini Omni Flash, all on the Advibly MCP. Trigger whenever the user pastes a reference to decode, replicate, or make "similar"; asks for a halftone, paper-cut, paper-collage, editorial-collage, or stop-motion-graphic look; wants a still or product turned into an animated ad, explainer, or motion graphic; or says "analyze this", "break this down", "reverse-engineer this look", "animate this", "assemble it", or "make a collage ad". Use even when the user does not say "skill" but the visual is clearly the halftone-collage look or the request is decode-then-animate. Default image gpt-image-2, default video Gemini Omni Flash, default set 4 scenes at 8s each.
 ---
 
 # Advibly Collage Motion
@@ -12,10 +12,11 @@ Speak in the user's language. No em dashes anywhere in output; use periods or li
 
 ## Hard defaults (do not drift)
 
-- **Image model:** `advibly_generate_image` with `model: "nano-banana-2"`. nano-banana-2 holds the paper-craft texture (dot pattern, cut edge, layer shadow, flat color) better than gpt-image-2, renders up to 4K, and takes reference images. If a burned-in label keeps degrading across rerolls, fall back to `gpt-image-2` or `seedream-5-pro` (both stronger at native text) for that scene only, never mid-set for the texture-carrying frames.
+- **Image model:** `advibly_generate_image` with `model: "gpt-image-2"` and `quality: "high"`. gpt-image-2 follows a dense field-by-field spec faithfully, takes reference images, and is the strongest at native burned-in text, so scene labels hold without endless rerolls. If the paper-craft texture (dot pattern, cut edge, layer shadow, flat color) keeps flattening across rerolls, switch the whole set to `nano-banana-2` (better texture retention, renders up to 4K); never mix image models across the texture-carrying frames of one set.
+- **Set shape:** 4 scenes, 8 seconds per clip, by default. Each scene is one still pair (empty field plus finished composition) and one video clip. Only deviate when the user asks for a different count or length.
 - **Faithful color, not brand palette:** pass `on_brand: false`. The decoded spec owns the color field and palette, so the brand-kit sheet must not be force-attached or it recolors the look. `brand_id` is still **required** on every generation call (it files the work in the user's library); it does not style the output when `on_brand` is false. Only set `on_brand: true` when the user explicitly wants the collage recolored to their brand.
 - **Video model:** `advibly_generate_video` with `model: "gemini-omni-flash"` (8s or 10s per clip, 9:16 or 16:9, native audio). Omni Flash animates from a single start frame, so the default assembly opens on the empty-field still and the prompt drives the pieces sliding in. It has no end frame: when the clip must land on the exact finished composition, or you need 1:1 or a 15s duration, switch that set to `seedance-2.0` (supports `start_image_url` + `end_image_url` for a mechanical empty-to-finished interpolation, plus all aspect ratios). See B3 for both routes. Pick one model per delivered set and stay on it.
-- **No text-overlay tool.** Advibly has none by design. Scene labels are burned in at image generation by the image model. If a label keeps degrading, reroll with `num_images` (up to 4), simplify the label, or switch that one scene to `gpt-image-2` / `seedream-5-pro`. Never plan to overlay text afterward.
+- **No text-overlay tool.** Advibly has none by design. Scene labels are burned in at image generation by the image model. gpt-image-2 is strong at native text; if a label still keeps degrading, reroll with `num_images` (up to 4), simplify the label, or try `seedream-5-pro` for that one scene. Never plan to overlay text afterward.
 - **Tools are deferred.** Load the exact Advibly tool schemas with tool search before the first call each session (search "advibly generate image", "advibly generate video", "advibly upload asset", "advibly list brands"). Confirm parameter names against what loads rather than assuming.
 
 ## The Advibly asset workflow (memorize)
@@ -27,9 +28,9 @@ To bring in a file the user owns (a product photo, a logo, an external reference
 1. `advibly_upload_asset` with `source_url` (public/signed link, best for large files and video) OR `data_base64` (raw bytes, for smaller local images), plus the required `brand_id`.
 2. It returns a reusable `url` (use as `reference_image_url` for images or `source_video_url` for video) and an `asset_id`.
 
-Store-brand shortcut: to lock the exact catalog product, pass `product_id` (from `advibly_get_products`) to the generation tool instead of hunting for its photo URL. On an image call it attaches the product's hero photo as an edit-mode reference; do not also pass `on_brand: true`.
+Store brands (`brand_type: "shopify"`): `advibly_get_products`, pick the product with the user, and note its image URL. Pass that photo URL in `reference_image_urls` on every still that shows the product, and point at it descriptively in the prompt ("the product from the reference photo, red bottle, label clearly visible"). Do NOT pass `product_id` to the generation tools here: on an image call it attaches the hero photo as an edit-mode reference, which pulls the output toward the raw photo instead of the collage treatment, and on a video call it would replace your start frame. This skill needs the photo as a style-transformed reference, nothing more.
 
-**Pass the product or brand reference image in every generation call** so subject and palette stay locked across the set.
+**Pass the product or brand reference image in every generation call that shows the subject** so subject and palette stay locked across the set. The one exception is the empty-field still: it contains no elements, so give it no product reference or the model will sneak the product in.
 
 ---
 
@@ -39,7 +40,7 @@ Run this whenever a reference is in play. If the user refers to an image but non
 
 ### Mindset
 
-The driving question is: "If I had to regenerate this exact frame from scratch on nano-banana-2, what would I need to specify?" Over-analyze on purpose, because the next request is almost always a variation ("same look, change the color field", "same style, different idea"), and that only works if every attribute is independently swappable. For every observation, name the technique and the why, not just a label. "Has texture" is nothing. "Visible halftone dot pattern on the black-and-white elements, dense at 45 lpi, which reads as printed-magazine craft instead of flat digital" is reproducible.
+The driving question is: "If I had to regenerate this exact frame from scratch on gpt-image-2, what would I need to specify?" Over-analyze on purpose, because the next request is almost always a variation ("same look, change the color field", "same style, different idea"), and that only works if every attribute is independently swappable. For every observation, name the technique and the why, not just a label. "Has texture" is nothing. "Visible halftone dot pattern on the black-and-white elements, dense at 45 lpi, which reads as printed-magazine craft instead of flat digital" is reproducible.
 
 ### Look in passes before writing
 
@@ -59,7 +60,7 @@ The driving question is: "If I had to regenerate this exact frame from scratch o
 A walk through the dimensions below under clear subheadings (Medium and craft, Color field, Elements and cut, Composition and depth, Idea, Label, Mood). Every element carries its technique and why.
 
 ### Generic prompt
-One self-contained natural-language paragraph that names medium, color field, every element with its halftone and cut treatment, composition, label, and mood, ready to paste into nano-banana-2. No reference to "the image above".
+One self-contained natural-language paragraph that names medium, color field, every element with its halftone and cut treatment, composition, label, and mood, ready to paste into gpt-image-2. No reference to "the image above".
 
 ### JSON spec
 The field-by-field collage spec (schema below) as valid JSON.
@@ -138,34 +139,34 @@ Decode each fully and separately. Then add one `## Shared style summary` capturi
 
 ### B1: Brief intake (one message, only if needed)
 
-If the spec and the user's ask already answer these, skip and proceed. Otherwise ask all at once:
+Defaults you do not ask about: **4 scenes, 8 seconds per clip** on Gemini Omni Flash. Only revisit them if the user's brief says otherwise (15s switches the set to seedance-2.0, a 5s teaser to kling-v3, see B3).
 
-1. Assets to lock to? A product photo or logo (upload with `advibly_upload_asset`, or pass a store `product_id`), or generate fresh.
-2. Clip duration: 8s or 10s on Gemini Omni Flash. (For 15s, the set switches to seedance-2.0; for a 5s teaser, to kling-v3. See B3.)
-3. Format: 9:16 vertical or 16:9 horizontal on Gemini Omni Flash. (For 1:1 square, the set switches to seedance-2.0.)
-4. How many scenes in the set?
-5. The idea per scene, or "you propose them".
+If the spec and the user's ask already answer the rest, skip and proceed. Otherwise ask all at once:
+
+1. Assets to lock to? Store brands (`brand_type: "shopify"` from `advibly_list_brands`): call `advibly_get_products`, pick the product with the user, and use its photo URL as the reference image across the set. Other brand types: a product photo or logo from `advibly_get_assets`, an upload via `advibly_upload_asset`, or generate fresh.
+2. Format: 9:16 vertical or 16:9 horizontal on Gemini Omni Flash. (For 1:1 square, the set switches to seedance-2.0.)
+3. The idea per scene, or "you propose them".
 
 ### B2: Generate the stills
 
-For each scene, call `advibly_generate_image` once:
+For each scene (4 by default), call `advibly_generate_image` once:
 
 ```
 advibly_generate_image
   prompt: <the spec turned into a self-contained collage prompt, label burned in>
   brand_id: <brand id>
-  model: "nano-banana-2"
+  model: "gpt-image-2"
   on_brand: false
   aspect_ratio: <from the spec / B1>
-  resolution: "2K"        # bump to 4K for hero frames
-  reference_image_urls: [<product or brand reference URL>]   # or use product_id for store products
+  quality: "high"
+  reference_image_urls: [<product photo URL (store product from advibly_get_products) or brand asset URL>]
 ```
 
-Burn the 2 to 4 word scene label into the prompt; do not plan to overlay it later. In the prompt, point at references descriptively ("the product from the reference photo, red bottle, label clearly visible").
+Burn the 2 to 4 word scene label into the prompt; do not plan to overlay it later. In the prompt, point at references descriptively ("the product from the reference photo, red bottle, label clearly visible"). Never pass `product_id`; the product photo goes in `reference_image_urls` as described in the asset workflow.
 
 Two stills matter per animated scene:
 
-- **The empty-field still:** the identical frame with the bare color field and no elements. This is the `start_image_url` for both video routes: Omni Flash animates forward from it, and Seedance interpolates from it to the finished still. Generate it from the same spec with the elements removed so the field, grain, and label-less background match exactly.
+- **The empty-field still:** the identical frame with the bare color field and no elements. This is the `start_image_url` for both video routes: Omni Flash animates forward from it, and Seedance interpolates from it to the finished still. Generate it from the same spec with the elements removed so the field, grain, and label-less background match exactly, and drop the product reference from `reference_image_urls` for this frame (no elements means no product).
 - **The finished still:** the full composition with all elements in place. It is the visual target and the `end_image_url` for the Seedance route. Even on the Omni Flash route, keep it as the reference the user approves so both of you agree on where the build lands.
 
 If a generate call returns `status: pending`, the image still renders in chat automatically; only call `advibly_get_generation` (`wait: true`) when you need the finished `url` to reuse downstream (which you always do here, for the video step). Display each still, ask "does this work or change it?", and reroll with an adjusted prompt or `num_images` until approved. Keep one model across the texture-carrying frames.
@@ -184,7 +185,7 @@ advibly_generate_video
   brand_id: <brand id>
   model: "gemini-omni-flash"
   aspect_ratio: <9:16 or 16:9>
-  duration: <8 or 10>
+  duration: 8               # the default; 10 only if the user asked
   start_image_url: <empty-field still URL>
 ```
 
@@ -243,10 +244,11 @@ If the user wants to post the set, `advibly_social_list_accounts` shows connecte
 
 ## Notes and rules
 
-- **One model per delivered set.** Pick the video model once for the whole set: Gemini Omni Flash by default (9:16 or 16:9, 8s or 10s), Seedance 2.0 when you need an exact empty-to-finished landing, 1:1, or 15s, Kling for a 5s teaser. Do not mix video models within a set the user expects to look uniform. Same for stills: keep nano-banana-2 across the texture-carrying frames, with the label-degrade swap to gpt-image-2 / seedream-5-pro applied per-scene only.
+- **Default set shape: 4 scenes, 8s each.** Deviate only on explicit request.
+- **One model per delivered set.** Pick the video model once for the whole set: Gemini Omni Flash by default (9:16 or 16:9, 8s default), Seedance 2.0 when you need an exact empty-to-finished landing, 1:1, or 15s, Kling for a 5s teaser. Do not mix video models within a set the user expects to look uniform. Same for stills: keep gpt-image-2 across the set; if the halftone texture keeps flattening, switch the whole set to nano-banana-2 rather than mixing.
 - **Faithful, not on-brand, by default.** `on_brand: false` so the decoded color field survives. `brand_id` is always passed for filing. Only flip to `on_brand: true` on explicit request to recolor to the brand.
 - **Self-contained prompts always.** Every image and video prompt stands alone; generators have no memory of earlier calls.
-- **Reference image in every call.** Keeps subject, palette, and craft locked.
+- **Reference image in every call that shows the subject.** Keeps subject, palette, and craft locked. Store products come from `advibly_get_products` as a photo URL in `reference_image_urls`, never as `product_id`. The empty-field still gets no product reference.
 - **Labels are burned in at generation,** never overlaid (Advibly has no overlay tool).
 - **Confirm tool names and params with tool search** each session; Advibly tools are deferred and model IDs change.
 - **No em dashes, minimal emoji** in any drafted copy or label.
