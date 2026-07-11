@@ -1,0 +1,4 @@
+interface:
+  display_name: "Advibly Pixar-Style Ad"
+  short_description: "Create feature-style 3D animated ads"
+  default_prompt: "Use $advibly-pixar-style-ad to create a feature-style 3D animated ad for my product."

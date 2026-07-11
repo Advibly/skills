@@ -33,7 +33,7 @@ Collect, in order of priority:
 1. **Brand** - `advibly_list_brands`. One brand: use it. Several: ask which. None: send the user to advibly.com/onboarding.
 2. **Brand context** - `advibly_get_brand` for identity, tone, and the research brief. Use it to sharpen dialogue voice and audience targeting. Call `advibly_get_brand_dossier` only if you need objections, competitor claims, or voice-of-customer quotes for the script.
 3. **Product** - the physical thing the creator holds on camera.
-   - Store brands (`brand_type: "shopify"`): `advibly_get_products`, pick the product with the user, and note its image URL. Do NOT pass `product_id` to the video tool later; this skill needs the photo as a reference image, not a start frame (see Step 4).
+   - Store brands (`brand_type: "ecom_store"`): `advibly_get_products`, pick the product with the user, and note its image URL. Do NOT pass `product_id` to the video tool later; this skill needs the photo as a reference image, not a start frame (see Step 4).
    - Other brand types: check `advibly_get_assets` for a usable product photo, or ask the user to provide one (`advibly_upload_asset`). If there is no physical product (SaaS, apps), the ad becomes a to-camera testimonial without product-in-hand shots; screenshots from the asset library can appear as phone-in-hand content instead.
 4. **Ad angle** - pick one or ask:
    - `testimonial` - creator speaks to camera about results (default)
