@@ -28,7 +28,7 @@ To bring in a file the user owns (a product photo, a logo, an external reference
 1. `advibly_upload_asset` with `source_url` (public/signed link, best for large files and video) OR `data_base64` (raw bytes, for smaller local images), plus the required `brand_id`.
 2. It returns a reusable `url` (use as `reference_image_url` for images or `source_video_url` for video) and an `asset_id`.
 
-Store brands (`brand_type: "shopify"`): `advibly_get_products`, pick the product with the user, and note its image URL. Pass that photo URL in `reference_image_urls` on every still that shows the product, and point at it descriptively in the prompt ("the product from the reference photo, red bottle, label clearly visible"). Do NOT pass `product_id` to the generation tools here: on an image call it attaches the hero photo as an edit-mode reference, which pulls the output toward the raw photo instead of the collage treatment, and on a video call it would replace your start frame. This skill needs the photo as a style-transformed reference, nothing more.
+Store brands (`brand_type: "ecom_store"`): `advibly_get_products`, pick the product with the user, and note its image URL. Pass that photo URL in `reference_image_urls` on every still that shows the product, and point at it descriptively in the prompt ("the product from the reference photo, red bottle, label clearly visible"). Do NOT pass `product_id` to the generation tools here: on an image call it attaches the hero photo as an edit-mode reference, which pulls the output toward the raw photo instead of the collage treatment, and on a video call it would replace your start frame. This skill needs the photo as a style-transformed reference, nothing more.
 
 **Pass the product or brand reference image in every generation call that shows the subject** so subject and palette stay locked across the set. The one exception is the empty-field still: it contains no elements, so give it no product reference or the model will sneak the product in.
 
@@ -143,7 +143,7 @@ Defaults you do not ask about: **4 scenes, 8 seconds per clip** on Gemini Omni F
 
 If the spec and the user's ask already answer the rest, skip and proceed. Otherwise ask all at once:
 
-1. Assets to lock to? Store brands (`brand_type: "shopify"` from `advibly_list_brands`): call `advibly_get_products`, pick the product with the user, and use its photo URL as the reference image across the set. Other brand types: a product photo or logo from `advibly_get_assets`, an upload via `advibly_upload_asset`, or generate fresh.
+1. Assets to lock to? Store brands (`brand_type: "ecom_store"` from `advibly_list_brands`): call `advibly_get_products`, pick the product with the user, and use its photo URL as the reference image across the set. Other brand types: a product photo or logo from `advibly_get_assets`, an upload via `advibly_upload_asset`, or generate fresh.
 2. Format: 9:16 vertical or 16:9 horizontal on Gemini Omni Flash. (For 1:1 square, the set switches to seedance-2.0.)
 3. The idea per scene, or "you propose them".
 
