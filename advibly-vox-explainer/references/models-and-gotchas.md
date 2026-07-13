@@ -42,7 +42,7 @@ problems below are already solved.
   every constraint into a positive: "the camera stays locked" not "no camera move"; "the
   lettering stays exactly as printed" not "don't redraw the text".
 - **SFX-only audio in every clip.** Paper foley (tear, rustle, whoosh, settle thunk) and
-  quiet room tone. Explicitly forbid narration, dialogue, and lyrics: the voiceover is muxed
+  quiet room tone. Explicitly forbid narration, dialogue, and lyrics: the voiceover is composed
   on top in the final mix and anything spoken in a clip collides with it.
 
 ### Content blocks (architecture-level, not fixable by rewording)
@@ -72,57 +72,17 @@ composites fine.
 - To bring in a user's file: `advibly_upload_asset` with `source_url` (public link) or
   `data_base64` (small local files) plus `brand_id`, returns a reusable `url`.
 
-## The final audio mix (local ffmpeg; Advibly has no mux tool)
+## Final composition
 
-Stitch the SFX-only clips with `advibly_stitch_videos` first, then mux voice and music
-locally. The reference pipeline's mix craft, adapted:
+Call `advibly_render_composition` once with the clips as ordered `scenes`, each with
+`volume: 0.3`; the narration in `voiceovers`; the instrumental generation as `music`; the
+chosen `aspect_ratio`; and `keep_scene_audio: true`. The default static music level already sits
+correctly under narration. Music auto-trims to video length with a tail fade. Keep whip effects
+inside the source clips; final composition uses hard cuts.
 
-```bash
-curl -sL -o vox-sfx.mp4 "<stitched url>"; curl -sL -o vo.mp3 "<voiceover url>"; curl -sL -o music.mp3 "<music url>"
-
-# durations first, so you know if the VO overruns the video
-ffprobe -v error -show_entries format=duration -of csv=p=0 vox-sfx.mp4
-ffprobe -v error -show_entries format=duration -of csv=p=0 vo.mp3
-
-ffmpeg -y -i vox-sfx.mp4 -i vo.mp3 -i music.mp3 -filter_complex \
-  "[0:a]volume=0.30[sfx];\
-   [2:a]volume=0.90,apad[bedraw];\
-   [sfx][bedraw]amix=inputs=2:duration=first:normalize=0[bg];\
-   [1:a]apad[vopad];\
-   [bg][vopad]sidechaincompress=threshold=0.03:ratio=8:attack=5:release=350[ducked];\
-   [ducked]loudnorm=I=-14:TP=-1.5:LRA=11[a]" \
-  -map 0:v -map "[a]" -shortest -c:v copy -c:a aac vox-final.mp4
-```
-
-Why each piece matters:
-
-- **`sidechaincompress`** ducks the music (and clip SFX bed) **only while the voice speaks**,
-  so the bed swells back in the gaps. Much better than a fixed music volume.
-- **`apad` on the voice and the bed** protects the tail: without it, a sidechain follows the
-  shorter input and `-shortest` clips a music-only or silent ending beat. `-shortest` then
-  cuts cleanly to the video length.
-- **`loudnorm=I=-14`** is the platform loudness standard. `amix` halves each input, so
-  without a normalize stage the mix lands around -12 dB peak and reads quiet on social.
-- **If the voiceover runs longer than the video** (check with the ffprobe lines above), do
-  not time-stretch the voice. Either tighten the narration lines and regenerate the VO
-  (cheap, preferred), or slow the video to fit by re-timing before the mux:
-  `ffmpeg -i vox-sfx.mp4 -filter:v "setpts={vo_dur/vid_dur}*PTS" -an vox-slow.mp4` and mux
-  against `vox-slow.mp4`. `setpts` slows the picture instead of freezing on the last frame.
-
-### Optional: whip transitions instead of hard cuts
-
-`advibly_stitch_videos` only hard-cuts. For whip transitions between shots, skip the MCP
-stitch and concat the downloaded clips locally with `xfade`, recomputing each clip's start
-(every transition overlaps by its own duration, so caption / timing offsets shift):
-
-```bash
-# two clips, a 0.3s whip slide between them (repeat the pattern down the chain)
-ffmpeg -y -i a.mp4 -i b.mp4 -filter_complex \
-  "[0:v][1:v]xfade=transition=slideleft:duration=0.3:offset=<a_dur-0.3>[v]" \
-  -map "[v]" -an whip_ab.mp4
-```
-
-Then mux audio as above. Keep whips to one or two transitions, not every cut.
+The call returns `status: pending`, `generation_id`, and `edit_url`. Let the chat widget poll,
+and wait explicitly only for subtitles or another downstream step. Mention the edit URL in final
+delivery.
 
 ## Captions (optional, after the VO is mixed in)
 

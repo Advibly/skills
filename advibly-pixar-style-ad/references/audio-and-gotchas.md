@@ -66,47 +66,16 @@ Good default brief: "gentle warm feature-film underscore, soft piano and light s
 hint of glockenspiel, hopeful and unhurried, ~85 BPM, storybook ad bed, instrumental". Keep it
 instrumental; lyrics fight the narration. Tracks run longer than the ad; trim in the mix.
 
-## The final mix (local ffmpeg; Advibly has no mux tool)
+## Final composition (one free call)
 
-Stitch the SFX-only clips with `advibly_stitch_videos` first, then mux voice and music locally.
-Clip SFX quiet, music sidechain-ducked under the voice, VO on top, tail protected, trimmed to
-video length:
+Call `advibly_render_composition` once with the approved clips as ordered `scenes`, each with
+`volume: 0.3`; the narration in `voiceovers`; the instrumental generation as `music`;
+`aspect_ratio: "9:16"`; and `keep_scene_audio: true`. The default static music bed already sits
+correctly under narration. Music is automatically trimmed to the composition with a tail fade.
 
-```bash
-curl -sL -o pixar-sfx.mp4 "<stitched url>"; curl -sL -o vo.mp3 "<voiceover url>"; curl -sL -o music.mp3 "<music url>"
-
-# durations first, so you know if the VO overruns the video
-ffprobe -v error -show_entries format=duration -of csv=p=0 pixar-sfx.mp4
-ffprobe -v error -show_entries format=duration -of csv=p=0 vo.mp3
-
-ffmpeg -y -i pixar-sfx.mp4 -i vo.mp3 -i music.mp3 -filter_complex \
-  "[0:a]volume=0.30[sfx];\
-   [2:a]volume=0.85,apad[bedraw];\
-   [sfx][bedraw]amix=inputs=2:duration=first:normalize=0[bg];\
-   [1:a]apad[vopad];\
-   [bg][vopad]sidechaincompress=threshold=0.03:ratio=8:attack=5:release=350[ducked];\
-   [ducked]loudnorm=I=-14:TP=-1.5:LRA=11[a]" \
-  -map 0:v -map "[a]" -shortest -c:v copy -c:a aac pixar-final.mp4
-```
-
-Why each piece matters:
-
-- **`sidechaincompress`** ducks the music (and the clip SFX bed) **only while the voice speaks**,
-  so the bed swells back in the gaps. Much better than a fixed music volume.
-- **`apad` on the voice and the bed** protects the tail: without it a sidechain follows the
-  shorter input and `-shortest` clips a quiet ending beat. `-shortest` then cuts cleanly to the
-  video length.
-- **`loudnorm=I=-14`** is the social loudness standard. `amix` halves each input, so without a
-  normalize stage the mix reads quiet.
-- **If the VO runs longer than the video** (compare the ffprobe numbers): do not time-stretch the
-  voice. Either tighten the narration and regenerate the VO (cheap, preferred), or slow the
-  picture to fit before muxing:
-  `ffmpeg -i pixar-sfx.mp4 -filter:v "setpts=<vo_dur/vid_dur>*PTS" -an pixar-slow.mp4` and mux
-  against `pixar-slow.mp4`. `setpts` slows the picture instead of freezing on the last frame.
-
-**Without a shell** (claude.ai, mobile): deliver the stitched cut, the VO URL, the music URL, and
-the per-beat timing table; the user mixes in CapCut (video layer, VO track, music ducked, then
-auto-captions).
+The call returns `status: pending`, `generation_id`, and `edit_url`. Let the chat widget poll.
+Use `advibly_get_generation` with `wait: true` only when the finished URL is needed downstream.
+Mention the edit URL in final delivery so the user can fine-tune the ad in the Advibly video editor.
 
 ## Captions (optional, after the VO is mixed in)
 
@@ -150,7 +119,7 @@ caption the SFX-only cut; there is nothing to transcribe.
 - **Model precedence:** an explicit user request for Gemini or Seedance locks that model for the
   whole ad. Without one, use Gemini throughout; switch a single clip to Seedance only after two
   Gemini retries or for an end-frame transition, with user approval.
-- **SFX-only audio, no narrator line.** The voiceover is muxed on top; anything spoken in a clip
+- **SFX-only audio, no narrator line.** The voiceover is composed on top; anything spoken in a clip
   collides with it.
 - **Morphing / drift mid-clip is the #1 motion failure.** Simplify to one primary action, lock
   the camera, hold to 8 seconds, and repeat the start-frame preservation constraint. Re-roll

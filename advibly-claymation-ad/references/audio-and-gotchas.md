@@ -72,56 +72,27 @@ Good default brief: "gentle warm music-box and soft felt-mallet percussion with 
 unhurried, nostalgic and hopeful, ~80 BPM, storybook ad underscore, instrumental". Keep it
 instrumental; lyrics fight the narration. Tracks run longer than the ad; trim in the mix.
 
-## The final mix (local ffmpeg; Advibly has no mux tool)
+## Final composition (one free call)
 
-Stitch the SFX-only clips with `advibly_stitch_videos` first, then mux voice and music locally.
-Clip foley quiet, music sidechain-ducked under the voice, VO on top, tail protected, trimmed to
-video length:
+Call `advibly_render_composition` once with the approved clips as ordered `scenes`, each with
+`volume: 0.3`; the narration in `voiceovers`; the instrumental generation as `music`; the
+chosen `aspect_ratio`; and `keep_scene_audio: true`. A separately voiced character line gets
+its own voiceover entry at that beat's cumulative `start_seconds`. The default static music bed
+already sits correctly under narration, so do not add dynamic gain processing or loudness targets.
+Music is automatically trimmed to the composition with a tail fade.
 
-```bash
-curl -sL -o clay-sfx.mp4 "<stitched url>"; curl -sL -o vo.mp3 "<voiceover url>"; curl -sL -o music.mp3 "<music url>"
+The call returns `status: pending`, `generation_id`, and `edit_url`. Let the chat widget poll.
+Use `advibly_get_generation` with `wait: true` only when the finished URL is needed for captions
+or publishing. Mention the edit URL in final delivery so the user can fine-tune the ad in the
+Advibly video editor.
 
-# durations first, so you know if the VO overruns the video
-ffprobe -v error -show_entries format=duration -of csv=p=0 clay-sfx.mp4
-ffprobe -v error -show_entries format=duration -of csv=p=0 vo.mp3
-
-ffmpeg -y -i clay-sfx.mp4 -i vo.mp3 -i music.mp3 -filter_complex \
-  "[0:a]volume=0.30[sfx];\
-   [2:a]volume=0.85,apad[bedraw];\
-   [sfx][bedraw]amix=inputs=2:duration=first:normalize=0[bg];\
-   [1:a]apad[vopad];\
-   [bg][vopad]sidechaincompress=threshold=0.03:ratio=8:attack=5:release=350[ducked];\
-   [ducked]loudnorm=I=-14:TP=-1.5:LRA=11[a]" \
-  -map 0:v -map "[a]" -shortest -c:v copy -c:a aac clay-final.mp4
-```
-
-Why each piece matters:
-
-- **`sidechaincompress`** ducks the music (and the clip foley bed) **only while the voice
-  speaks**, so the bed swells back in the gaps. Much better than a fixed music volume.
-- **`apad` on the voice and the bed** protects the tail: without it a sidechain follows the
-  shorter input and `-shortest` clips a quiet ending beat. `-shortest` then cuts cleanly to the
-  video length.
-- **`loudnorm=I=-14`** is the social loudness standard. `amix` halves each input, so without a
-  normalize stage the mix reads quiet.
-- **If the VO runs longer than the video** (compare the ffprobe numbers): do not time-stretch
-  the voice. Either tighten the narration and regenerate the VO (cheap, preferred), or slow the
-  picture to fit before muxing:
-  `ffmpeg -i clay-sfx.mp4 -filter:v "setpts=<vo_dur/vid_dur>*PTS" -an clay-slow.mp4` and mux
-  against `clay-slow.mp4`. `setpts` slows the picture instead of freezing on the last frame (and
-  a slightly slower claymation read is on-genre).
-
-**Without a shell** (claude.ai, mobile): deliver the stitched cut, the VO URL, the music URL, and
-the per-beat timing table; the user mixes in CapCut (video layer, VO track, music ducked, then
-auto-captions).
-
-## Optional: stop-motion judder pass
+## Optional: clip-level stop-motion judder pass
 
 Smooth motion is the default (all the reference clips are smooth). Only if the user explicitly
 wants the ~12 fps stop-motion judder, add it **after** the mix, never in a video prompt:
 
 ```bash
-ffmpeg -i clay-final.mp4 -filter:v "fps=12,fps=24" -c:a copy clay-final-judder.mp4
+ffmpeg -i clay-beat.mp4 -filter:v "fps=12,fps=24" -c:a copy clay-beat-judder.mp4
 ```
 
 This drops to 12 fps then duplicates frames back to 24, producing visible judder while keeping
@@ -176,7 +147,7 @@ caption the SFX-only cut; there is nothing to transcribe.
 - **Model precedence:** an explicit user request for Gemini or Seedance locks that model for the
   whole ad. Without one, use Gemini throughout; switch a single clip to Seedance only after two
   Gemini retries or for an end-frame transition, with user approval.
-- **SFX-only audio, no `Narrator:` line.** The voiceover is muxed on top; anything spoken in a
+- **SFX-only audio, no `Narrator:` line.** The voiceover is composed on top; anything spoken in a
   clip collides with it.
 - **Clay smoothing mid-clip is the #1 motion failure.** The anti-smoothing constraint block
   (see `animate-prompts.md`) goes in every prompt; re-roll clips that flatten, and re-roll the

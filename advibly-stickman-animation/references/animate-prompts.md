@@ -19,7 +19,7 @@ approval. If the user names a model, use it for every clip.
   `audio-and-gotchas.md`).
 - **Prompt length:** ~90 to 240 words, under the 2000-char cap.
 - **Do not ask the model for "12fps", "choppy", "on twos", or "stop-motion".** Generate smooth; the
-  snappy limited-animation feel is added with the ffmpeg step-frame pass after the mix.
+  snappy limited-animation feel is added with the clip-level step-frame pass before composition.
 - **Static camera is the default** (flat 2D comic frames): locked, no zoom or pan. An intentional
   impact shake, a whip, or a quick push is fine when a specific beat calls for it.
 - **Before/after transformation route:** only Seedance takes `end_image_url` (start = "before" still,
