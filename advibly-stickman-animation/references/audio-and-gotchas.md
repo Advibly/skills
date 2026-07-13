@@ -80,96 +80,18 @@ Keep beds instrumental; lyrics fight the narration. They run longer than needed;
 if two) in the mix. When you use two, the switch timestamp `T` is the cumulative duration of the
 beats before the turn (sum the clip durations up to that beat).
 
-## The final mix (local ffmpeg; Advibly has no mux tool)
+## Clip-level snap and final composition
 
-Stitch the SFX-only clips with `advibly_stitch_videos` first, then build the spliced music bed and
-mux voice and music locally. Clip foley quiet, music sidechain-ducked under the voice, VO on top,
-tail protected, trimmed to video length.
+Apply the on-twos step-frame pass to every individual approved clip before composition. The
+composition tool cannot decimate frames. Then call `advibly_render_composition` once with those
+processed clips as ordered `scenes`, each with `volume: 0.2`; one narration entry per beat in
+`voiceovers`, each at the beat's cumulative `start_seconds`; the instrumental bed as `music`;
+the chosen `aspect_ratio`; and `keep_scene_audio: true`. The default static music level already
+sits correctly under narration. Music auto-trims with a tail fade.
 
-```bash
-curl -sL -o stick-sfx.mp4 "<stitched url>"
-# one VO file per beat: v1.mp3 v2.mp3 ... (in beat order)
-curl -sL -o v1.mp3 "<beat 1 VO url>"; curl -sL -o v2.mp3 "<beat 2 VO url>"   # ...etc
-# music: one bed, or two (bedA.mp3 + bedB.mp3) if your arc turns
-curl -sL -o bedA.mp3 "<music url>"
-
-# duration of the stitched cut drives everything
-ffprobe -v error -show_entries format=duration -of csv=p=0 stick-sfx.mp4   # e.g. 40
-
-VID=$(ffprobe -v error -show_entries format=duration -of csv=p=0 stick-sfx.mp4)
-
-# SINGLE-BED story: skip step 1 entirely and use your one bed as music-bed.mp3
-#   cp bed.mp3 music-bed.mp3
-# TWO-BED story (an arc that turns): set T = the turn's start = sum of clip durations before it,
-# then build one spliced bed (bed A [0..T] crossfading into bed B [T..end]):
-T=42   # example: the turn starts at 42s
-BEATLEN=$(python3 -c "print(max(0, $VID - $T))")
-ffmpeg -y -i bedA.mp3 -i bedB.mp3 -filter_complex \
-  "[0:a]atrim=0:${T},afade=t=out:st=$(python3 -c "print($T-0.3)"):d=0.3[d];\
-   [1:a]atrim=0:${BEATLEN},afade=t=in:st=0:d=0.3[b];\
-   [d][b]concat=n=2:v=0:a=1[bed]" \
-  -map "[bed]" music-bed.mp3
-
-# 2) mux: per-beat VO placed by offset, music ducked under the VO, VO mixed back on top,
-#    everything padded and trimmed to the exact video length VID.
-#    Inputs: 0 = video (carries SFX), 1..N = the per-beat VO line clips, then the music bed.
-#    OFF1..OFFN = each beat's start time in seconds (cumulative clip durations; add ~0.4s so the
-#    line sits just inside its beat). Example offsets: 0.4 8.4 16.4 26.4 33.4 (one per beat, from cumulative clip durations)
-ffmpeg -y -i stick-sfx.mp4 -i v1.mp3 -i v2.mp3 -i v3.mp3 -i v4.mp3 -i v5.mp3 -i music-bed.mp3 \
- -filter_complex \
-  "[1]adelay=${OFF1}|${OFF1}[a1];[2]adelay=${OFF2}|${OFF2}[a2];[3]adelay=${OFF3}|${OFF3}[a3];\
-   [4]adelay=${OFF4}|${OFF4}[a4];[5]adelay=${OFF5}|${OFF5}[a5];\
-   [a1][a2][a3][a4][a5]amix=inputs=5:duration=longest:normalize=0,volume=1.7,apad,atrim=0:${VID}[vo];\
-   [vo]asplit=2[vok][vom];\
-   [0:a]volume=0.22,apad,atrim=0:${VID}[sfx];\
-   [6:a]volume=0.55,apad,atrim=0:${VID}[bed];\
-   [sfx][bed]amix=inputs=2:duration=longest:normalize=0[bg];\
-   [bg][vok]sidechaincompress=threshold=0.03:ratio=10:attack=5:release=400,apad,atrim=0:${VID}[duck];\
-   [duck][vom]amix=inputs=2:duration=longest:normalize=0[premix];\
-   [premix]loudnorm=I=-15:TP=-1.5:LRA=11,afade=t=out:st=$(python3 -c "print($VID-0.6)"):d=0.6[a]" \
-  -map 0:v -map "[a]" -t ${VID} -c:v copy -c:a aac -b:a 192k stick-final.mp4
-```
-
-`OFF*` are in milliseconds for `adelay` (e.g. `OFF1=400`, `OFF2=8400`). Set them from the cumulative
-clip durations so each line opens on its beat.
-
-Why each piece matters (and the two bugs this recipe fixes):
-
-- **The VO must be MIXED BACK IN, not just used as a sidechain key.** `sidechaincompress` outputs
-  only its first input (the ducked music bed); the voice is merely the trigger. So after ducking you
-  MUST `amix` the voice copy (`[vom]`) back on top (`[duck][vom]amix...`). The earlier recipe mapped
-  the ducked bed directly and shipped a video with music but **no voiceover at all**. `asplit`
-  makes the two VO copies: `[vok]` triggers the duck, `[vom]` is the audible voice.
-- **`sidechaincompress` truncates to the shorter input,** so its output (and the whole mix under
-  `-shortest`) gets cut to the VO length, dropping the video tail. Fix: `apad,atrim=0:${VID}` after
-  every stage and use `-t ${VID}` instead of `-shortest` so the audio spans the full video.
-- **The music-bed splice** puts the tense drone under the problem beats and the upbeat beat from the
-  transformation onward (line `T` up with the real transformation start).
-- **`sidechaincompress`** ducks the bed **only while the voice speaks**, so it swells back in the
-  gaps. Verify: `volumedetect` a VO window vs a gap window; speech windows should read ~8 to 10 dB
-  louder than a music-only gap. If they read the same, the VO is missing (the bug above).
-- **`loudnorm=I=-15`** is a social-loudness target (slightly softer than -14 suits a calm read).
-- **If a VO line runs longer than its beat window:** tighten that one line and regenerate it
-  (cheap); never time-stretch the voice.
-
-## The on-twos snap pass (default for this genre)
-
-The stick-figure look is limited animation on twos (~12 fps). AI video renders smooth, so add the
-snap **after** the mix, never in a video prompt:
-
-```bash
-ffmpeg -i stick-final.mp4 -filter:v "fps=12,fps=24" -c:a copy stick-final-snap.mp4
-```
-
-This drops to 12 fps then duplicates frames back to 24, producing the authentic pose-to-pose snap
-while keeping the audio intact. It also masks minor line wobble from the video model. **Default-ON
-for this genre** (unlike the smooth claymation ad); skip it only if the user wants fully smooth
-motion. For a slightly softer snap use `fps=15,fps=30`.
-
-**Without a shell** (claude.ai, mobile): deliver the stitched cut, the VO URL, the two music URLs,
-the switch timestamp, and the per-beat timing table; the user builds the music switch, mixes, and
-applies the snap in CapCut (drone then beat on the music track split at the transformation, VO on
-top, then a frame-rate/posterize-time effect for the snap).
+The call returns `status: pending`, `generation_id`, and `edit_url`. Let the chat widget poll.
+Use `advibly_get_generation` with `wait: true` only when the finished URL is needed downstream.
+Mention the edit URL in final delivery so the user can fine-tune the ad in the Advibly video editor.
 
 ## Captions (optional, after the VO is mixed in)
 
@@ -220,7 +142,7 @@ snap does not change duration).
 - **Model precedence:** an explicit user request for Gemini or Seedance locks that model for the
   whole ad. Without one, use Gemini throughout; switch a single clip to Seedance only after two
   Gemini retries or for an approved before/after transformation.
-- **SFX-only audio, no `Narrator:` line.** The voiceover is muxed on top; anything spoken in a clip
+- **SFX-only audio, no `Narrator:` line.** The voiceover is composed on top; anything spoken in a clip
   collides with it.
 - **Shading / 3D creep mid-clip is the #1 motion failure.** The anti-3D / anti-flicker constraint
   block (see `animate-prompts.md`) goes in every prompt; re-roll clips that pick up volume or

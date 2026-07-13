@@ -1,23 +1,13 @@
 ---
 name: advibly-claymation-ad
 description: >
-  Turn a brand plus one product into a finished Aardman-style stop-motion claymation ad,
-  end to end on the Advibly MCP: a locked cast-and-continuity sheet plus an approved 8-beat
-  narrated story (setup, inciting moment, social validation, quiet despair, clay infographic,
-  discovery, transformation, resolution), one hand-sculpted plasticine storyboard still per
-  beat (gpt-image-2, generated sequentially so the character holds across beats), each still
-  animated into smooth clay motion that preserves the sculpted texture (Gemini Omni Flash
-  image-to-video by default, Seedance 2.0 as a secondary fallback, SFX-only audio, never
-  baked-in narration), stitched into one spot, then
-  narrated with advibly_generate_voiceover and scored with advibly_generate_music, mixed
-  together with ffmpeg (warm storyteller voice over sidechain-ducked music and clay foley).
-  Trigger whenever the user wants a "claymation ad", an "Aardman-style ad", a "stop-motion
-  ad", a "Wallace and Gromit style ad", a "clay-style ad", a "plasticine ad", a "claymation
-  story ad", or shows a reference clip with the hand-sculpted clay look; or says "make a
-  claymation ad", "stop-motion ad for my product", "clay ad", or "Aardman style". Use even
-  when the user does not say "skill" but is clearly after the hand-sculpted stop-motion clay
-  look. Default flow: cast + story beat map approved first, storyboard stills, clay motion,
-  stitch, then voiceover plus music generated and mixed.
+  Turn a brand and product into a finished stop-motion claymation ad on the Advibly MCP. Lock
+  a cast and narrated story, generate sequential hand-sculpted plasticine storyboard stills,
+  animate them with Gemini Omni Flash by default or Seedance 2.0 as fallback, then compose
+  voiceover, music, and clay foley. Trigger for "claymation ad", "Aardman-style ad",
+  "stop-motion ad", "Wallace and Gromit style ad", "plasticine ad", "clay-style ad", a
+  product ad in a hand-sculpted clay look, or a matching visual reference. Use even when the
+  user does not name the skill but clearly wants a narrated clay stop-motion product story.
 ---
 
 # Advibly Claymation Ad
@@ -29,7 +19,7 @@ anchors on **Aardman Animations** (Wallace & Gromit, Chicken Run) and **Laika** 
 Kubo): hand-sculpted clay with visible fingerprint impressions and tool marks, matte
 plasticine surfaces, real knit fabric, wooden and ceramic miniature-set props, warm tungsten
 light, shallow macro depth of field. Everything generates on the Advibly MCP (images, clips,
-stitch, voiceover, music); only the final audio mix runs locally through ffmpeg.
+voiceover, music, and final composition).
 
 Speak in the user's language. No em dashes anywhere in output; use periods or line breaks.
 Keep on-screen copy and labels free of emoji unless asked.
@@ -86,7 +76,7 @@ beat map or any prompt:
 - **Smooth motion, not stop-motion judder.** AI video is smooth 24/30 fps; real stop-motion
   judders at ~12 fps. The reference clips are all smooth, so smooth is the default. Never ask a
   video model for "stop-motion judder" (it breaks the aesthetic). If the user wants the judder
-  feel, add an ffmpeg post pass after stitching (`fps=12,fps=24`); see
+  feel, add a step-frame pass to each individual clip before composition (`fps=12,fps=24`); see
   `references/audio-and-gotchas.md`.
 - **Audio in clips is SFX only, no spoken words.** Clay foley (soft press, fabric rustle,
   kettle pour, gentle settle) and quiet room tone. Explicitly forbid narration, dialogue, and
@@ -96,8 +86,7 @@ beat map or any prompt:
   story (xAI TTS; warm storyteller `ara` is the default Aardman-tone voice, `sal` smooth,
   `leo` for a wry documentary narrator; ~0.03 credits per 1000 characters) and
   `advibly_generate_music` composes a gentle instrumental bed (0.3 credits per track). Advibly
-  has no mux tool yet, so the final mix (VO on top, music ducked, clip foley under both) runs
-  locally through ffmpeg. Pick **one** narrator voice for the whole ad.
+  uses `advibly_render_composition` for the final assembly. Pick **one** narrator voice for the whole ad.
 - **Faithful clay look, not brand recolor:** pass `on_brand: false` on every generation call.
   The claymation aesthetic owns its warm palette; the brand-kit board would recolor it.
   `brand_id` is still **required** on every call (it files the work in the user's library);
@@ -105,7 +94,7 @@ beat map or any prompt:
   prop's copied label text, never through a stamped logo.
 - **No text-overlay tool.** The only baked text is the beat-5 clay infographic (sculpted-clay
   letters, rendered by the image model) and any burned-in captions, which go on in the final
-  step via `advibly_add_subtitles` or ffmpeg, never in a video prompt (the negative block tells
+  step via `advibly_add_subtitles`, never in a video prompt (the negative block tells
   the model "no captions").
 - **Format:** 9:16 vertical (TikTok / Reels / Shorts) is the default and rarely changes for
   this genre. Hold one aspect across every beat.
@@ -320,13 +309,7 @@ advibly_generate_video
   was the default, offer Seedance only as the approved secondary fallback; never switch if the
   user explicitly selected Gemini.
 
-## PHASE 5: STITCH
-
-`advibly_stitch_videos` with the ordered clips (generation ids or URLs, max 12, hard cuts, in
-beat order). The output is saved to the brand's library. This is the **SFX-only cut**:
-watchable on its own and the base for the voiceover.
-
-## PHASE 6: VOICEOVER + MUSIC + FINAL MIX
+## PHASE 5: VOICEOVER + MUSIC + FINAL COMPOSITION
 
 Full recipe and gotchas in `references/audio-and-gotchas.md`.
 
@@ -340,23 +323,21 @@ Full recipe and gotchas in `references/audio-and-gotchas.md`.
      voice: <the beat map's voice: ara / sal / leo / rex / eve>
      language: <only when auto-detection would get it wrong>
    ```
-   The script was written to time in Phase 2. Check the delivered length against the stitched
-   cut (`ffprobe -show_entries format=duration`); if it runs long, tighten the lines and
+   The script was written to time in Phase 2. If it exceeds the scene total, tighten the lines and
    regenerate (cheap), never time-stretch the voice.
    - **Character dialogue (beat 3):** by default fold the supporting character's remark into the
      narrator's read ("Her friend leaned in. You look so rested lately, she said."). If the user
      wants a distinct second voice, generate that one line as a separate `advibly_generate_voiceover`
      call with a different `voice` and drop it at the beat-3 timestamp in the mix.
 2. **Music.** Generate a gentle instrumental bed from the beat map's `music` description
-   (`instrumental: true`). Storybook, unhurried, warm. Trim to length in the mix.
-3. **Mix (local ffmpeg; Advibly has no mux tool yet).** Download the stitched cut, the VO, and
-   the track, check durations, then layer: clip foley quiet, music sidechain-ducked under the
-   voice, VO on top, tail protected, trimmed to video length. The exact `sidechaincompress`
-   command is in `references/audio-and-gotchas.md`.
-   - **Optional stop-motion judder pass** (only if the user asked): after the mix,
-     `ffmpeg -i final.mp4 -filter:v "fps=12,fps=24" -c:a copy final-judder.mp4`.
-   - **Without a shell** (claude.ai, mobile): deliver the stitched cut, the VO URL, the music
-     URL, and the per-beat timing table; the user mixes in CapCut.
+   (`instrumental: true`). Composition auto-trims it with a tail fade.
+3. **Optional judder, clip-level only.** If requested, apply the `fps=12,fps=24` step-frame pass
+   to each individual clip before composition; the composition tool cannot decimate frames.
+4. **Compose once.** Call `advibly_render_composition` with clips as ordered `scenes` (each
+   `volume: 0.3`), narration as `voiceovers`, the bed as `music`, the chosen aspect, and
+   `keep_scene_audio: true`. Give any separate character line its beat's cumulative offset.
+   It returns `status: pending`, `generation_id`, and `edit_url`.
+5. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video editor.
 
 ## PHASE 7: CAPTIONS (optional, after the VO is mixed in)
 
@@ -391,8 +372,8 @@ with the final video. Only offer after the user has seen the finished ad.
   selected it.
 - **Clips are SFX-only; the narrator is external.** No `Narrator:` line in any video prompt;
   the voiceover generates in Phase 6 and mixes on top.
-- **Smooth motion is the default.** Never ask a video model for stop-motion judder; add it in ffmpeg
-  post only if requested.
+- **Smooth motion is the default.** Never ask a video model for stop-motion judder; apply the
+  clip-level step-frame pass before composition only if requested.
 - **`on_brand: false` always; `brand_id` always; no logo watermark.** The brand lives in the
   copied clay-label text.
 - **Self-contained prompts.** Generators have no memory of earlier calls; the STYLE LOCK and
@@ -433,6 +414,6 @@ with the final video. Only offer after the user has seen the finished ad.
   anti-smoothing constraint blocks, and the per-clip QA checklist. Read before writing any motion
   prompt.
 - `references/audio-and-gotchas.md`: the voiceover voice map and timing, the music brief, the
-  full final-mix ffmpeg recipe (sidechain ducking, tail protection, VO-overrun fix), the
+  final composition contract (static music, automatic tail fade, VO-overrun fix), the
   optional stop-motion judder pass, captions, and the model / failure-mode gotchas. Read before
   the audio mix or debugging a weak render.

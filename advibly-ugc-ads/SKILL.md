@@ -14,7 +14,7 @@ Generates complete multi-shot UGC video ads through the Advibly MCP. One brand p
 3. Writes a 5-shot direct response script with dialogue for each scene
 4. Builds a storyboard: one start frame per shot (gpt-image-2, creator + product as references), shown to the user for approval before any video renders
 5. Animates each approved frame with `advibly_generate_video` (Gemini Omni Flash image-to-video, 9:16, native audio: the creator speaks the dialogue)
-6. Assembles the clips into one finished vertical ad with ffmpeg when a shell is available; otherwise delivers the clip URLs with stitching guidance
+6. Assembles the clips into one finished vertical ad with one `advibly_render_composition` call
 
 Every generation spends the account's Advibly credits. Renders are the expensive part; script edits are free. Get the dialogue right before generating video.
 
@@ -177,19 +177,13 @@ Execution notes:
 
 ### Step 6 - Assemble the ad
 
-**With a shell available (Claude Code):** download the clips and concat them in shot order.
-
-```bash
-mkdir -p ugc-ad && cd ugc-ad
-curl -sL -o shot1.mp4 "<url1>"   # repeat for shots 2-5
-ffmpeg -y -i shot1.mp4 -i shot2.mp4 -i shot3.mp4 -i shot4.mp4 -i shot5.mp4 \
-  -filter_complex "[0:v][0:a][1:v][1:a][2:v][2:a][3:v][3:a][4:v][4:a]concat=n=5:v=1:a=1[v][a]" \
-  -map "[v]" -map "[a]" -c:v libx264 -pix_fmt yuv420p -c:a aac final-ad.mp4
-```
-
-The clips come from the same model at the same settings, so the concat filter handles them cleanly. Deliver `final-ad.mp4` to the user.
-
-**Without a shell (claude.ai, mobile):** deliver the five clip URLs in shot order and tell the user to stitch them in CapCut: video layer, then captions (auto-captions off the native audio work well). Total runtime is ~40 seconds for five 8-second shots.
+Call `advibly_render_composition` once with the five generation ids or HTTPS URLs as ordered
+`scenes`, `keep_scene_audio: true`, and `aspect_ratio: "9:16"`. Do not add voiceovers or music:
+the creator's native spoken audio belongs to each scene. The tool hard-cuts the clips, returns
+`status: pending`, a `generation_id`, and an `edit_url`. The chat widget polls the render; call
+`advibly_get_generation` with `wait: true` only if a finished URL is required for captions or
+publishing. Deliver the render and mention the `edit_url` so the user can fine-tune the ad in the
+Advibly video editor. Total runtime is about 40 seconds for five 8-second shots.
 
 ### Step 7 - Optional: publish
 

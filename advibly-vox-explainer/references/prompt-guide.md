@@ -182,7 +182,7 @@ All five axes matter, especially FEEL and COLOR, which set pacing and grade:
 - **One camera move plus one action cluster per shot.** For richer editing, cut between
   multiple short shots (wide plus detail) rather than asking one clip for a timeline.
 - **The AUDIO axis is mandatory on Advibly:** clips ship SFX-only because the voiceover is
-  muxed externally. Any spoken words in a clip collide with it.
+  composed externally. Any spoken words in a clip collide with it.
 
 ### The stability axes (what actually fixes loop, wobble, and morph failures)
 

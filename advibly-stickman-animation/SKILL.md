@@ -1,28 +1,14 @@
 ---
 name: advibly-stickman-animation
 description: >
-  Turn a brand into a finished 2D stick-figure comic ad, end to end on the Advibly MCP. This skill
-  locks the STYLE and lets the agent invent a fresh STORY for each brand: flat black-outline stick
-  figures on a pure white void, uniform linework, zero shading, snappy limited animation, a strict
-  two-accent color system (the brand's primary color for the product and its energy, gray for an
-  optional problem element), and comic-book VFX (lightning, halftone POW bursts, motion lines).
-  You design an original concept, cast, and beat list per brief (any structure: a punchy
-  problem-to-solution pitch, a one-joke gag, a visual metaphor made literal, a running gag, a
-  slice-of-life, a mock demo), get it approved, then render one flat white-void storyboard still
-  per beat (gpt-image-2, anchored on the first still as a style plate so the linework and any
-  recurring silhouette hold), animate each into snappy limited-animation motion that preserves the
-  flat 2D linework (Gemini Omni Flash by default, Seedance 2.0 as an approved fallback, SFX-only
-  clips, never baked-in narration), stitch, add the on-twos stick-figure snap with an ffmpeg
-  step-frame pass, then narrate with advibly_generate_voiceover and score with
-  advibly_generate_music, mixed with ffmpeg. Devices like an anthropomorphized problem character
-  (a gremlin, a blob, a "mood cloud") are optional tools, not a template. Trigger whenever the
-  user wants a "stickman ad", a "stick figure ad", a "stick-figure animation", a "stick man
-  animation ad", a "2D stick figure explainer", a "doodle animation ad", a "minimalist line
-  animation ad", or shows a reference clip with the black stick-figure comic look; or says "make a
-  stickman ad", "stick figure ad for my product", or "animate a stick figure". Use even when the
-  user does not say "skill" but is clearly after the flat black stick-figure comic look. Flow:
-  invent and approve the concept and beat list first, then storyboard stills, snappy 2D motion,
-  stitch, then voiceover plus music generated and mixed.
+  Turn a brand into a finished 2D stick-figure comic ad on the Advibly MCP. Invent and approve
+  an original concept and beat list, generate consistent flat black-outline storyboard stills
+  on a white void with restrained brand accents, animate them with Gemini Omni Flash by default
+  or Seedance 2.0 as fallback, apply an on-twos snap, then compose voiceover, music, and comic
+  SFX. Trigger for "stickman ad", "stick figure ad", "stick-figure animation", "2D stick
+  figure explainer", "doodle animation ad", "minimalist line animation ad", "animate a stick
+  figure", or a reference with the flat black stick-figure comic look. Use even without the word
+  "skill" when that visual treatment is clearly requested.
 ---
 
 # Advibly Stickman Animation Ad
@@ -34,7 +20,7 @@ slice-of-life, whatever fits the brief) and render it in the fixed stickman look
 on **minimalist vector stick-figure comic animation**: uniform clean black outlines on a pure white
 void, flat cartoon fills with zero shading, snappy limited animation, comic-book VFX, and a strict
 two-accent color system. Everything generates on the Advibly MCP (images, clips, stitch, voiceover,
-music); only the final audio mix and the on-twos snap pass run locally through ffmpeg.
+music and composition); only the clip-level on-twos snap is a local preprocessing pass.
 
 Speak in the user's language. No em dashes anywhere in output; use periods or line breaks.
 Keep on-screen copy and labels free of emoji unless asked.
@@ -107,7 +93,7 @@ invented per brief. Read both before designing the concept or writing any prompt
   either model, use it for every clip and never switch models automatically.
 - **Snappy limited animation, not smooth 24fps.** This genre's signature is pose-to-pose limited
   animation on twos (~12 fps), the opposite of the claymation skill. AI video renders smooth, so
-  **generate smooth, then apply an ffmpeg step-frame pass** (`fps=12,fps=24`) after the mix to get
+  **generate smooth, then apply a step-frame pass** (`fps=12,fps=24`) to each clip before composition to get
   the authentic stick-figure snap. This is default-ON for this genre (see
   `references/audio-and-gotchas.md`); skip it only if the user wants fully smooth motion. Never ask
   the video model itself for "12fps" or "choppy" (it degrades the render); the snap is a post step.
@@ -120,8 +106,8 @@ invented per brief. Read both before designing the concept or writing any prompt
   read, `ara` for a warmer read; ~0.03 credits per 1000 characters). `advibly_generate_music`
   composes the bed. The signature audio move is **two beds**: a tense ambient drone under beats 1
   to 6, hard-cutting to an upbeat energetic beat at the transformation (beat 7). Generate two
-  short tracks and splice them at the transformation timestamp in the mix. Advibly has no mux tool
-  yet, so the final mix runs locally through ffmpeg. Pick **one** narrator voice for the whole ad.
+  short tracks and splice them at the transformation timestamp in the mix. Advibly has no compose tool
+  uses `advibly_render_composition` for final assembly. Pick **one** narrator voice for the whole ad.
 - **Two-accent color, brand color injected manually:** pass `on_brand: false` on every generation
   call. `on_brand: true` would recolor the whole scene from the brand kit and stamp a logo, which
   kills the black-and-white line look. Instead you read the brand's primary color in Phase 1 and
@@ -130,7 +116,7 @@ invented per brief. Read both before designing the concept or writing any prompt
   brand has no clear primary color, default the accent to a bold energetic red.
 - **No text-overlay tool.** The only baked text is the beat-9 POW / slogan burst and the product
   logo (rendered by the image model) plus any burned-in captions, which go on in the final step
-  via `advibly_add_subtitles` or ffmpeg, never in a video prompt (the negative block tells the
+  via `advibly_add_subtitles`, never in a video prompt (the negative block tells the
   model "no captions").
 - **Format:** 9:16 vertical (TikTok / Reels / Shorts) is the default and rarely changes for this
   genre. Hold one aspect across every beat.
@@ -343,12 +329,10 @@ advibly_generate_video
   2-retry cap per beat; if a third attempt still picks up shading or morphs the lines, regenerate
   that still on `nano-banana-2` and re-animate.
 
-## PHASE 5: STITCH
+## PHASE 5: CLIP-LEVEL ON-TWOS PASS
 
-`advibly_stitch_videos` with the ordered clips (generation ids or URLs, max 12, hard cuts, in beat
-order). Hard cuts fit the genre; the only special transitions (a smoke-puff wipe, a white flash)
-are baked into the individual clips, not the stitch. The output is saved to the brand's library.
-This is the **SFX-only cut**: watchable on its own and the base for the voiceover.
+Apply the `fps=12,fps=24` step-frame pass to every individual approved clip before composition.
+Skip only if the user wants fully smooth motion. The composition tool cannot decimate frames.
 
 ## PHASE 6: VOICEOVER + MUSIC + FINAL MIX
 
@@ -364,17 +348,11 @@ Full recipe and gotchas in `references/audio-and-gotchas.md`.
    single mood; if your story has a clear turn (a problem-to-relief pivot, a reveal), generate two
    beds and hard-cut between them at that turn's timestamp in the mix. This is optional, driven by
    the story, not a required drone-to-beat switch.
-3. **Mix (local ffmpeg; Advibly has no mux tool yet).** Download the stitched cut, the per-beat VO
-   lines, and the bed(s). Place each VO line at its beat offset, duck the music under the voice,
-   **mix the voice back on top** (do not just use it as the sidechain key), pad and trim to the video
-   length. The exact, correct filtergraph is in `references/audio-and-gotchas.md`.
-4. **On-twos snap pass (default for this genre).** After the mix, apply the step-frame pass to get
-   the authentic stick-figure limited-animation feel:
-   `ffmpeg -i stick-final.mp4 -filter:v "fps=12,fps=24" -c:a copy stick-final-snap.mp4`. Skip only
-   if the user wants fully smooth motion (a calmer piece may read better smooth).
-   - **Without a shell** (claude.ai, mobile): deliver the stitched cut, the VO line URLs with their
-     offsets, the music URL(s), and the per-beat timing table; the user mixes and applies the snap in
-     CapCut.
+3. **Compose once.** Call `advibly_render_composition` with processed clips as ordered `scenes`
+   (each `volume: 0.2`), one `voiceovers` entry per beat at its cumulative `start_seconds`, the
+   bed as `music`, the chosen aspect, and `keep_scene_audio: true`. The default static music level
+   is correct under VO. It returns `status: pending`, `generation_id`, and `edit_url`.
+4. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video editor.
 
 ## PHASE 7: CAPTIONS (optional, after the VO is mixed in)
 
@@ -416,7 +394,7 @@ with the final video. Only offer after the user has seen the finished ad.
 - **Clips are SFX-only; the narrator is external.** No `Narrator:` line in any video prompt; the
   voiceover generates in Phase 6 and mixes on top.
 - **The snap is a post step.** Generate smooth motion; add the on-twos limited-animation feel with
-  the ffmpeg step-frame pass after the mix. Never ask the video model for "12fps" or "choppy".
+  the clip-level step-frame pass before composition. Never ask the video model for "12fps" or "choppy".
 - **`brand_id` always; no logo watermark from the kit.** The brand lives in the copied flat-prop
   label text and the accent color.
 - **Self-contained prompts.** Generators have no memory of earlier calls; the STYLE LOCK and COLOR
@@ -460,6 +438,5 @@ with the final video. Only offer after the user has seen the finished ad.
   labeled example, cross-clip continuity, and the per-clip QA checklist. Read before writing any
   motion prompt.
 - `references/audio-and-gotchas.md`: the voice map and timing, per-line VO placement, the one-or-two
-  bed music guidance, the full correct final-mix ffmpeg recipe (per-beat VO offsets, VO mixed back in,
-  sidechain ducking, pad/trim to length), the on-twos snap pass, captions, and the failure-mode
+  bed music guidance, the final composition contract (per-beat VO offsets, static music, automatic trim), the on-twos snap pass, captions, and the failure-mode
   gotchas. Read before the audio mix or debugging a weak render.

@@ -1,18 +1,13 @@
 ---
 name: advibly-pixar-style-ad
 description: >
-  Turn a brand and product into a finished vertical Pixar-style ad on the Advibly MCP: lock an
-  original, expressive feature-film 3D cast and 4-beat story, create and approve sequential
-  gpt-image-2 storyboard stills with continuity references, animate each approved still with
-  Gemini Omni Flash by default (Seedance 2.0 as a secondary fallback) at 8 seconds per shot, then
-  stitch the clips, narrate with advibly_generate_voiceover and score with advibly_generate_music,
-  and mix the voice over sidechain-ducked music and clip SFX with ffmpeg. If the user explicitly
-  names Gemini Omni Flash or Seedance 2.0, use that model. Use whenever the user asks for a
-  "Pixar-style ad", "Pixar cartoon ad", "3D animated product ad", "animated ad with a talking
-  problem", a warm big-eyed feature-animation look, or a similar reference. The default is a 9:16
-  TikTok/Reels/Shorts ad with an anthropomorphized-problem hook, product reveal, friendly
-  mechanism mascot scene, and product CTA, narrated and scored in-platform. Use the Advibly MCP
-  rather than KIE, Arcads, or direct API scripts.
+  Turn a brand and product into a finished vertical feature-film-style 3D animated ad on the
+  Advibly MCP. Lock an original expressive cast and 4-beat story, create sequential gpt-image-2
+  storyboard stills, animate 8-second shots with Gemini Omni Flash by default or Seedance 2.0
+  as fallback, then compose narration, music, and SFX. Trigger for "Pixar-style ad", "Pixar
+  cartoon ad", "3D animated product ad", "animated ad with a talking problem", a warm big-eyed
+  feature-animation look, or a matching reference. If the user explicitly names Gemini Omni
+  Flash or Seedance 2.0, use that model.
 ---
 
 # Advibly Pixar-Style Ad
@@ -40,7 +35,7 @@ The look, the motion, and the voice are **three separate steps**:
    each shot to 8 seconds and let one clear action carry it.
 3. **The voice is always external.** Clips ship SFX-only (room tone, soft characterful sounds) and
    the warm narrator is generated separately with `advibly_generate_voiceover`, scored with
-   `advibly_generate_music`, and mixed on top with ffmpeg. Baking a narrator into the video model
+   `advibly_generate_music`, and assembled on top with `advibly_render_composition`. Baking a narrator into the video model
    forces lip-sync compromises and gives a different voice every beat. One voiceover render is one
    consistent voice across all four beats.
 
@@ -53,7 +48,7 @@ The look, the motion, and the voice are **three separate steps**:
 - Read `references/animate-prompts.md` before every video. It contains Gemini and Seedance prompt
   formulas, the model-selection rules, the 8-second SFX-only motion cadence, and clip QA.
 - Read `references/audio-and-gotchas.md` before the audio pass or when debugging a weak render. It
-  contains the voiceover voice map, the music brief, the full final-mix ffmpeg recipe, captions,
+  contains the voiceover voice map, the music brief, the final composition contract, captions,
   and the model / failure-mode gotchas.
 
 ## Non-negotiable workflow
@@ -90,7 +85,7 @@ advibly_generate_image     -> gpt-image-2 storyboard stills
 advibly_generate_video     -> gemini-omni-flash or seedance-2.0 image-to-video (8s)
 advibly_generate_voiceover -> one continuous narrator MP3 (xAI TTS)
 advibly_generate_music     -> one instrumental score bed (MiniMax 2.6)
-advibly_stitch_videos      -> merge the SFX-only clips in beat order
+advibly_render_composition      -> merge the SFX-only clips in beat order
 advibly_get_generation     -> finished URL of any generation when you need it downstream
 ```
 
@@ -207,15 +202,7 @@ in parallel when the MCP/client permits it, then poll each with `advibly_get_gen
 final URL. Regenerate only failed clips, up to two retries per beat. Tighten the relevant
 constraint instead of adding vague quality adjectives.
 
-## Phase 5: stitch
-
-QA every clip using the reference checklist. Put the approved clips in beat order and merge them
-with `advibly_stitch_videos` (ordered generation ids or URLs, hard cuts). The output is saved to
-the brand's library. This is the **SFX-only cut**: watchable on its own and the base for the
-voiceover. If the stitch tool is unavailable, assemble locally with ffmpeg when a shell is
-available; if neither path exists, hand back ordered clip URLs with a concise CapCut/ffmpeg recipe.
-
-## Phase 6: voiceover + music + final mix
+## Phase 5: voiceover + music + final composition
 
 Full recipe and gotchas in `references/audio-and-gotchas.md`.
 
@@ -229,18 +216,15 @@ Full recipe and gotchas in `references/audio-and-gotchas.md`.
      voice: <the beat map's voice: ara / sal / leo / rex / eve>
      language: <only when auto-detection would get it wrong>
    ```
-   The script was written to time in Phase 2. Check the delivered length against the stitched cut
-   (`ffprobe -show_entries format=duration`); if it runs long, tighten the lines and regenerate
+   The script was written to time in Phase 2. If it exceeds the scene total, tighten and regenerate
    (cheap), never time-stretch the voice.
 2. **Music.** Generate one gentle instrumental bed from the beat map's `music` description
-   (`instrumental: true`). Warm, hopeful, storybook; it sits under the voice. Trim to length in
-   the mix.
-3. **Mix (local ffmpeg; Advibly has no mux tool yet).** Download the stitched cut, the VO, and the
-   track, check durations, then layer: clip SFX quiet, music sidechain-ducked under the voice, VO
-   on top, tail protected, trimmed to video length. The exact `sidechaincompress` command is in
-   `references/audio-and-gotchas.md`.
-   - **Without a shell** (claude.ai, mobile): deliver the stitched cut, the VO URL, the music URL,
-     and the per-beat timing table; the user mixes in CapCut.
+   (`instrumental: true`). Warm, hopeful, storybook; composition auto-trims it with a tail fade.
+3. **Compose once.** Call `advibly_render_composition` with approved clips as ordered `scenes`
+   (each `volume: 0.3`), `voiceovers: [{source: <VO generation id>}]`, the bed as `music`,
+   `aspect_ratio: "9:16"`, and `keep_scene_audio: true`. The default music level already sits
+   correctly under narration. It returns `status: pending`, `generation_id`, and `edit_url`.
+4. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video editor.
 
 Never ask the video model to bake narration or captions into a clip. Verify the final master has
 no dead silent tail, correct 9:16 framing, a readable product label, and a clean CTA lower third.
@@ -268,7 +252,7 @@ with the final video. Only offer after the user has seen the finished ad.
 - **Video morphing:** simplify to one primary action, lock the camera, keep it to 8 seconds, and
   repeat the start-frame preservation constraint. Do not add more motion to hide the defect.
 - **VO runs longer than the picture:** tighten the narration and regenerate (preferred), or slow
-  the picture to fit before muxing. See `references/audio-and-gotchas.md`. Never time-stretch the
+  the picture to fit before composition. See `references/audio-and-gotchas.md`. Never time-stretch the
   voice.
 - **Insufficient credits:** use the connected credit-purchase tool and share its checkout link;
   do not substitute another paid provider.

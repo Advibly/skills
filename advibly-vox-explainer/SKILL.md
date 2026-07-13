@@ -1,23 +1,14 @@
 ---
 name: advibly-vox-explainer
 description: >
-  Turn a brand plus one angle into a finished Vox-style paper-collage explainer video ad,
-  end to end on the Advibly MCP: a narrative beat map (arc, hook, per-shot camera and element
-  motion), a visual theme and image model picked by eye from bake-offs, one richly layered
-  collage poster keyframe per shot (nano-banana-2 by default for the paper texture, headline
-  text baked in, the real product photo composited photoreal), living-collage motion per shot
-  (gemini-omni-flash, SFX-only audio) with the dramatic looks (pieces assembling from an
-  empty field, confetti, impact shake, whip) done through motion prompts alone, stitched
-  into one spot, then narrated with advibly_generate_voiceover and scored with
-  advibly_generate_music, mixed together with ffmpeg (voice over sidechain-ducked music).
-  Trigger whenever the user
-  wants a "Vox style" video, a paper or torn-paper collage animation, a motion collage, a
-  collage explainer or collage ad; asks to turn a product, topic, or brand story into a
-  narrated explainer or punchy collage video; or says "vox video", "collage video", "motion
-  collage", "paper collage explainer", "make a collage ad", "explainer video for my product",
-  or "that Vox look". Use even when the user does not say "skill" but is clearly after the
-  editorial paper-collage explainer look. Default flow: beat map approved first, theme picked
-  by eye, keyframes, motion, stitch, then voiceover plus music generated and mixed.
+  Turn a brand angle into a finished Vox-style paper-collage explainer ad on the Advibly MCP.
+  Approve a narrative beat map and visual theme, generate layered collage-poster keyframes,
+  animate living paper motion with Gemini Omni Flash, then compose narration, music, and SFX.
+  Supports baked headlines, photoreal product cutouts, assemble-from-empty reveals, confetti,
+  impact shake, and editorial collage motion. Trigger for "Vox style video", "paper collage
+  animation", "motion collage", "collage explainer", "collage ad", "paper collage explainer",
+  "make a collage ad", "explainer video for my product", or a reference with the editorial
+  torn-paper look. Use even without the word "skill" when that style is clearly requested.
 ---
 
 # Advibly Vox Explainer
@@ -25,8 +16,7 @@ description: >
 Turn one brand angle into a finished **Vox-style paper-collage explainer ad**: a bold, punchy,
 narrated spot where each beat is a torn-paper collage poster that comes alive, cut every 4 to 6
 seconds, with the real product photo living photoreal inside the paper world. Everything
-generates on the Advibly MCP (images, clips, stitch, voiceover, music); only the final
-audio mix runs locally through ffmpeg.
+generates and assembles on the Advibly MCP.
 
 The look is the modern editorial paper collage popularized by Vox explainers and creators like
 Stav Zilber and rom1trs: hand-cut paper cut-outs, torn edges, tape, halftone dots, newspaper
@@ -86,8 +76,8 @@ beat map or any prompt:
 - **Voiceover and music generate in-platform.** `advibly_generate_voiceover` narrates the
   script (xAI TTS: voices eve / ara / rex / sal / leo, 20+ languages, ~0.03 credits per
   1000 characters) and `advibly_generate_music` composes the instrumental bed (MiniMax
-  Music 2.6, 0.3 credits per track). Advibly has no mux tool yet, so the final mix (VO on
-  top, music ducked, clip SFX under both) runs locally through ffmpeg (Phase 7).
+  Music 2.6, 0.3 credits per track). Phase 7 assembles VO, a static music bed, and quiet clip
+  SFX in one free `advibly_render_composition` call.
 - **Faithful theme, not brand recolor:** pass `on_brand: false` on every generation. The
   theme's palette is the whole point; the brand-kit board would recolor it. `brand_id` is
   still **required** on every call (it files the work in the user's library); with `on_brand`
@@ -294,14 +284,7 @@ advibly_generate_video
   with lyrics.
 - Show each clip: keep, re-edit (same poster, adjusted motion prompt), or re-roll.
 
-## PHASE 6: STITCH
-
-`advibly_stitch_videos` with the ordered clips (generation ids or URLs, max 12, hard cuts).
-The output is saved to the brand's library. This is the **SFX-only cut**: watchable on its
-own and the base for the voiceover. If more than 12 shots exist, stitch in two passes (stitch
-halves, then stitch the two outputs).
-
-## PHASE 7: VOICEOVER + MUSIC + FINAL MIX
+## PHASE 6: VOICEOVER + MUSIC + FINAL COMPOSITION
 
 1. **Voiceover.** Join the beats' narration lines into one continuous read and generate it:
    ```
@@ -312,9 +295,7 @@ halves, then stitch the two outputs).
      voice: <the beat map's voice: eve / ara / rex / sal / leo>
      language: <only when auto-detection would get it wrong>
    ```
-   The script was written to time in Phase 2 (~2.5 to 3 words per second per beat). Check
-   the delivered length against the stitched cut (`ffprobe -show_entries format=duration`);
-   if it runs long, tighten the lines and re-generate (cheap), never time-stretch the voice.
+   If the read exceeds the scene total, tighten and regenerate it; never time-stretch.
 2. **Music.** Generate the bed from the beat map's `music` description:
    ```
    advibly_generate_music
@@ -322,33 +303,18 @@ halves, then stitch the two outputs).
      prompt: <the beat map's music description + tempo + "modern ad underscore">
      instrumental: true
    ```
-   Tracks run longer than the ad; trim in the mix. Keep it instrumental: lyrics fight the
+   Tracks may run longer than the ad; composition auto-trims with a tail fade. Keep it instrumental: lyrics fight the
    narration.
-3. **Mix (local ffmpeg; Advibly has no mux tool yet).** Download the stitched cut, the VO,
-   and the track. First check durations, then layer: clip SFX quiet, music
-   **sidechain-ducked under the voice**, VO on top, tail protected, trimmed to video length:
-   ```bash
-   curl -sL -o vox-sfx.mp4 "<stitched url>"; curl -sL -o vo.mp3 "<voiceover url>"; curl -sL -o music.mp3 "<music url>"
-   ffprobe -v error -show_entries format=duration -of csv=p=0 vox-sfx.mp4   # video length
-   ffprobe -v error -show_entries format=duration -of csv=p=0 vo.mp3        # VO length
-   ffmpeg -y -i vox-sfx.mp4 -i vo.mp3 -i music.mp3 -filter_complex \
-     "[0:a]volume=0.30[sfx];[2:a]volume=0.90,apad[bed];[sfx][bed]amix=inputs=2:duration=first:normalize=0[bg];[1:a]apad[vo];[bg][vo]sidechaincompress=threshold=0.03:ratio=8:attack=5:release=350[duck];[duck]loudnorm=I=-14:TP=-1.5:LRA=11[a]" \
-     -map 0:v -map "[a]" -shortest -c:v copy -c:a aac vox-final.mp4
-   ```
-   `sidechaincompress` dips the music only while the voice speaks and lets it swell back in
-   the gaps. The `apad` on the voice and bed protects the tail so `-shortest` cuts to the
-   video length instead of a sidechain following the shorter track. `loudnorm=I=-14` is the
-   social loudness standard (amix halves each input, so without it the mix reads quiet).
-   **If the VO runs longer than the video** (compare the two ffprobe numbers), do not
-   time-stretch the voice: tighten the narration and regenerate (cheap), or slow the picture
-   to fit with `setpts` before muxing. Full recipe, plus the optional whip-transition
-   assembly, in `references/models-and-gotchas.md`.
-   **Without a shell** (claude.ai, mobile): deliver the stitched cut, the VO URL, the music
-   URL, and the per-beat timing table; the user mixes in CapCut.
-4. **Captions (optional, only after the VO is mixed in).** Upload the final with
-   `advibly_upload_asset` (`source_url`), then `advibly_add_subtitles` with a dynamic preset
+3. **Compose once.** Call `advibly_render_composition` with ordered clips as `scenes` (each
+   `volume: 0.3`), `voiceovers: [{source: <VO generation id>}]`, the music generation as `music`,
+   the chosen `aspect_ratio`, and `keep_scene_audio: true`. The default static music level already
+   sits correctly under narration. It returns `status: pending`, `generation_id`, and `edit_url`;
+   let the chat widget poll the render.
+4. **Captions (optional, only after composition).** Use `advibly_get_generation` with `wait: true`
+   only here to obtain the finished render, then call `advibly_add_subtitles` with a dynamic preset
    (`glide`, `fusion`, `glass`). Never caption the SFX-only cut; there is nothing to
    transcribe. Add brand words to `vocabulary` so the transcriber spells them right.
+5. Deliver the result and mention the `edit_url` so the user can fine-tune the ad in the Advibly video editor.
 
 ## PHASE 8: OPTIONAL PUBLISH
 
@@ -398,6 +364,6 @@ with the final video. Only offer after the user has seen the finished ad.
   background-remover recipe, all done through the MCP with no local scripts. Read before
   reaching for a punch bigger than living-poster motion.
 - `references/models-and-gotchas.md`: image and video model choice, content blocks, the
-  positive-phrasing rule, the asset workflow, and the full final-mix ffmpeg recipe
-  (sidechain ducking, tail protection, VO-overrun fix, whip assembly). Read before debugging
+  positive-phrasing rule, the asset workflow, and the final composition contract
+  (a static low music bed, tail protection, VO-overrun fix, whip assembly). Read before debugging
   a weak render or the audio mix.

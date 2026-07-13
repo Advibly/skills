@@ -222,19 +222,12 @@ Lock the look once (color field, halftone and cut convention, label treatment), 
 
 ### B5: Assemble the set (optional)
 
-**With a shell available (Claude Code):** download the clips and concat them in scene order.
-
-```bash
-mkdir -p collage-ad && cd collage-ad
-curl -sL -o scene1.mp4 "<url1>"   # repeat per scene
-ffmpeg -y -i scene1.mp4 -i scene2.mp4 -i scene3.mp4 \
-  -filter_complex "[0:v][0:a][1:v][1:a][2:v][2:a]concat=n=3:v=1:a=1[v][a]" \
-  -map "[v]" -map "[a]" -c:v libx264 -pix_fmt yuv420p -c:a aac final-collage.mp4
-```
-
-Same model and settings across clips, so the concat is clean. If the clips have no audio track, drop the `[N:a]` inputs and `a=1` from the filter and use `concat=n=N:v=1:a=0[v]` mapping only `[v]`.
-
-**Without a shell (claude.ai, mobile):** deliver the clip URLs in scene order and tell the user to stitch them in CapCut.
+Call `advibly_render_composition` once with the generation ids or HTTPS URLs as ordered `scenes`,
+the set's aspect ratio, and `keep_scene_audio: true`. It returns `status: pending`, a
+`generation_id`, and an `edit_url`; the chat widget polls the render. Use
+`advibly_get_generation` with `wait: true` only if a finished URL is needed for publishing.
+Deliver the render and mention the `edit_url` so the user can fine-tune it in the Advibly video
+editor.
 
 ### B6: Optional publish
 

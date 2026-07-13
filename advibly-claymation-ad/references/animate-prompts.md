@@ -26,7 +26,7 @@ When the user explicitly names Gemini or Seedance, use that model for every clip
   `stunning`, `8k`, `studio`, `perfect`. Substitute "stop-motion claymation film aesthetic",
   "polished hand-sculpted", "high fidelity", "evenly hand-painted".
 - **Smooth motion, never judder.** Do not ask a video model for "stop-motion judder"; it breaks the
-  aesthetic. If the user wants judder, it is an ffmpeg post pass after stitching (see
+  aesthetic. If the user wants judder, it is a clip-level step-frame pass before composition (see
   `audio-and-gotchas.md`).
 - **Beat-7 end-frame reveal:** only Seedance takes `end_image_url`. For its explicitly selected
   or approved fallback route, pass the "before" still as `start_image_url` and the lightly-

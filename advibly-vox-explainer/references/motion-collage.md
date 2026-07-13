@@ -120,11 +120,11 @@ or the ending.
   wobble (that warps text).
 - **Whip settle within a shot:** "a quick whip-pan sweep that settles onto the composition
   and holds steady." Good on a hook.
-- **Whip as a transition between shots.** `advibly_stitch_videos` does hard cuts only, so a
+- **Whip as a transition between shots.** `advibly_render_composition` does hard cuts only, so a
   whip *between* two shots has two routes: (a) end shot A on a whip-out and open shot B on a
   whip-in via their motion prompts, so the cut hides inside the blur, or (b) skip the MCP
   stitch and concat locally with an ffmpeg `xfade` whip (see `models-and-gotchas.md`), then
-  mux the audio. Route (a) is all-MCP and usually enough. Reserve whips for a couple of
+  compose the audio. Route (a) is all-MCP and usually enough. Reserve whips for a couple of
   transitions, not every cut.
 
 ---
