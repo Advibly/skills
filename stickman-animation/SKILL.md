@@ -1,5 +1,5 @@
 ---
-name: advibly-stickman-animation
+name: stickman-animation
 description: >
   Turn a brand into a finished 2D stick-figure comic ad on the Advibly MCP. Invent and approve
   an original concept and beat list, generate consistent flat black-outline storyboard stills

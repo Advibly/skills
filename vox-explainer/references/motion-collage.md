@@ -7,7 +7,7 @@ scripts and no local frame engine.** Every one of those looks is reachable throu
 two ways:
 
 1. **As motion instructions in the video prompt** (the default, works for almost everything).
-   The `advibly-collage-motion` skill already proves this: it animates flat collage stills
+   The `collage-motion` skill already proves this: it animates flat collage stills
    into "empty color field, cut-out pieces slide in and snap into place" clips with
    `gemini-omni-flash`. Same engine, same idea here.
 2. **As a start-frame plus end-frame reveal on Seedance** when you need the build to land on

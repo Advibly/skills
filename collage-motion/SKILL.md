@@ -1,5 +1,5 @@
 ---
-name: advibly-collage-motion
+name: collage-motion
 description: >
   End-to-end Advibly pipeline for halftone paper-collage and stop-motion-graphic ads. Decodes a reference image into a field-editable JSON spec, generates on-brand stills with gpt-image-2, then animates them into assemble-from-empty motion with Gemini Omni Flash, all on the Advibly MCP. Trigger whenever the user pastes a reference to decode, replicate, or make "similar"; asks for a halftone, paper-cut, paper-collage, editorial-collage, or stop-motion-graphic look; wants a still or product turned into an animated ad, explainer, or motion graphic; or says "analyze this", "break this down", "reverse-engineer this look", "animate this", "assemble it", or "make a collage ad". Use even when the user does not say "skill" but the visual is clearly the halftone-collage look or the request is decode-then-animate. Default image gpt-image-2, default video Gemini Omni Flash, default set 4 scenes at 8s each.
 ---

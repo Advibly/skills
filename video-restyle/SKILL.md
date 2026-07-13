@@ -1,5 +1,5 @@
 ---
-name: advibly-video-restyle
+name: video-restyle
 description: >
   Restyle an existing talking-head or UGC video with Gemini Omni Flash video-to-video on the
   Advibly MCP while preserving identity, expressions, lip-sync, and original audio. Analyze and

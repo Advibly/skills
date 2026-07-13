@@ -1,5 +1,5 @@
 ---
-name: advibly-pixar-style-ad
+name: pixar-style-ad
 description: >
   Turn a brand and product into a finished vertical feature-film-style 3D animated ad on the
   Advibly MCP. Lock an original expressive cast and 4-beat story, create sequential gpt-image-2

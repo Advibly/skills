@@ -1,5 +1,5 @@
 ---
-name: advibly-ugc-ads
+name: ugc-ads
 description: Generate complete multi-shot UGC video ads end to end with the Advibly MCP tools. Takes a brand plus an ad angle and produces a realistic AI creator image (gpt-image-2), a 5-shot direct response script, a user-approved storyboard of start frames, and one video clip per shot animated from its frame (Gemini Omni Flash with native spoken dialogue), then assembles the clips into a finished vertical ad. Use whenever the user wants a UGC ad, a creator-style video ad, a product-in-hand testimonial video, or asks to turn a product into a TikTok/Reels-style ad. Also trigger on phrases like "UGC video," "creator ad," "testimonial ad," or "make an ad for my product" when the Advibly MCP is connected.
 ---
 

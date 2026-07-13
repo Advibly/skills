@@ -1,5 +1,5 @@
 ---
-name: advibly-explainer-videos
+name: explainer-videos
 description: >
   Turn a brand topic or product angle into a narrated animated explainer on the Advibly MCP
   using one of ten visual styles: cinematic 2D, gouache, whiteboard doodle, pixel art,

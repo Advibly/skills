@@ -1,5 +1,5 @@
 ---
-name: advibly-claymation-ad
+name: claymation-ad
 description: >
   Turn a brand and product into a finished stop-motion claymation ad on the Advibly MCP. Lock
   a cast and narrated story, generate sequential hand-sculpted plasticine storyboard stills,

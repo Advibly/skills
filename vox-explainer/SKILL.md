@@ -1,5 +1,5 @@
 ---
-name: advibly-vox-explainer
+name: vox-explainer
 description: >
   Turn a brand angle into a finished Vox-style paper-collage explainer ad on the Advibly MCP.
   Approve a narrative beat map and visual theme, generate layered collage-poster keyframes,
