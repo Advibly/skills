@@ -19,7 +19,7 @@ approval. If the user names a model, use it for every clip.
   `audio-and-gotchas.md`).
 - **Prompt length:** ~90 to 240 words, under the 2000-char cap.
 - **Do not ask the model for "12fps", "choppy", "on twos", or "stop-motion".** Generate smooth; the
-  snappy limited-animation feel is added with the clip-level step-frame pass before composition.
+  snappy limited-animation feel is added with `frame_cadence: "on_twos"` on the final composition.
 - **Static camera is the default** (flat 2D comic frames): locked, no zoom or pan. An intentional
   impact shake, a whip, or a quick push is fine when a specific beat calls for it.
 - **Before/after transformation route:** only Seedance takes `end_image_url` (start = "before" still,
@@ -139,5 +139,5 @@ Watch the full clip and verify:
 
 If shading or 3D creeps in, the lines boil, or a silhouette morphs, regenerate with a tightened
 CONSTRAINTS block, or re-roll the still on `nano-banana-2` and re-animate. 2-retry cap per beat. The
-on-twos snap pass in the final phase also masks minor line wobble; re-roll a clip whose lines visibly
+On Twos effect in the final phase also masks minor line wobble; re-roll a clip whose lines visibly
 boil.

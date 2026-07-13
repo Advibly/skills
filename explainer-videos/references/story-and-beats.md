@@ -127,8 +127,9 @@ Editable field by field. Proceed only on an explicit yes.
 }
 ```
 
-`snap` is `true` when the chosen style's cadence is on-twos / stop-motion (drives the step-frame
-pass), `false` for the smooth styles. `voice` and `music` seed Phase 6. `headline` is non-null
+`snap` is `true` when the chosen style's cadence is on-twos / stop-motion (drives
+`frame_cadence: "on_twos"` on the final composition), `false` for the smooth styles. `voice` and
+`music` seed Phase 6. `headline` is non-null
 only on shots that bake in-world text, and only for styles whose `typography` bakes headlines.
 
 ## Anti-monotony checklist (before you show the map)

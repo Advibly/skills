@@ -130,7 +130,7 @@ Typography is treated as diegetic art, appearing as handwritten, slightly slante
     "image_style_block": "A flat, top-down view of a dirty dry-erase whiteboard surface (#F4F4F6) covered in faint, gray circular erase smudges. Hand-drawn doodle art using thick, bullet-tip dry-erase markers in vivid #0033CC blue, #009933 green, and #CC0000 red. The linework is thick with slight variable opacity mimicking real ink. Text is handwritten in the same marker style. The whiteboard and its tray are clear: no physical marker, pen, or eraser prop anywhere in the frame. No shading, no 3D elements, flat 2D layout.",
     "image_negative_prompt": "physical marker, expo marker, pen or eraser prop, real photographic objects on the board, 3D render, CGI, glossy, drop shadows, gradients, clean white background, paper texture, vector graphics, perfect lines, cinematic lighting, depth of field.",
     "recommended_video_model": "gemini-omni-flash",
-    "motion_prompt_dna": "Simulate 12fps stop-motion animation. Add continuous 'line boiling' jitter to all drawn marker lines so they wiggle slightly frame to frame. Animate elements appearing through rapid, stroke-by-stroke draw-on reveals. Maintain the dirty whiteboard texture perfectly still while the drawings boil.",
+    "motion_prompt_dna": "Add continuous 'line boiling' jitter to all drawn marker lines so they wiggle subtly between poses. Animate elements appearing through rapid, stroke-by-stroke draw-on reveals. Maintain the dirty whiteboard texture perfectly still while the drawings boil. The final composition supplies the on-twos cadence.",
     "audio_recipe": {
       "voice_direction": "Casual, upbeat, conversational explainer. Speak clearly but informally, like a friendly teacher.",
       "music_prompt": "Quirky, bouncy, pizzicato strings and light plucky synths, mid-tempo, instrumental modern ad underscore, lighthearted and inquisitive.",
@@ -140,7 +140,7 @@ Typography is treated as diegetic art, appearing as handwritten, slightly slante
   "failure_modes": [
     "Model renders clean vector art instead of semi-transparent, slightly messy marker ink.",
     "Model forgets the dirty, smudged 'ghosting' background and makes it a pure #FFFFFF digital canvas.",
-    "Video model applies smooth 24fps interpolation instead of the required 12fps jitter/boiling.",
+    "Source motion may interpolate smoothly; this is expected. Apply frame_cadence: on_twos in the final composition for the required cadence.",
     "Model attempts to add 3D depth, shading, or drop shadows to the characters instead of keeping them flat outlines."
   ],
   "best_use_cases": "Educational explainers, quick trivia hits, casual onboarding, or simplifying complex, abstract concepts."
@@ -159,5 +159,5 @@ Typography is treated as diegetic art, appearing as handwritten, slightly slante
 
 * **Vector Clean-up:** Generative models will aggressively try to turn "simple doodles" into pristine, scalable vector graphics. The guard is constantly referencing "variable opacity," "marker bleed," and "dry-erase ink" in the prompt.
 * **Pristine Backgrounds:** Without extreme prompting, the background will default to pure #FFFFFF white. The guard is the explicit detailing of "#F4F4F6", "faint gray circular erase smudges", and "dirty".
-* **Interpolation Smoothness:** Video models will try to make the motion fluid. If `gemini-omni-flash` fails to hold the 12fps stop-motion feel, the output will look like a Flash animation rather than a whiteboard doodle. The guard is the specific "Simulate 12fps stop-motion animation" and "continuous line boiling" instruction.
+* **Interpolation Smoothness:** Video models make the source motion fluid. Keep the "continuous line boiling" behavior in the prompt and pass `frame_cadence: "on_twos"` to the final composition for the whiteboard cadence.
 * **Shading/Volume:** The models may try to give the blob characters ambient occlusion or rounded shading. The negative prompt "no shading, no 3D elements, flat 2D layout" is the primary guard against this.

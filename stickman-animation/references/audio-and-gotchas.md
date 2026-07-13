@@ -80,13 +80,15 @@ Keep beds instrumental; lyrics fight the narration. They run longer than needed;
 if two) in the mix. When you use two, the switch timestamp `T` is the cumulative duration of the
 beats before the turn (sum the clip durations up to that beat).
 
-## Clip-level snap and final composition
+## On Twos final composition
 
-Apply the on-twos step-frame pass to every individual approved clip before composition. The
-composition tool cannot decimate frames. Then call `advibly_render_composition` once with those
-processed clips as ordered `scenes`, each with `volume: 0.2`; one narration entry per beat in
+Call `advibly_render_composition` once with the approved clips as ordered `scenes`, each with
+`volume: 0.2`; one narration entry per beat in
 `voiceovers`, each at the beat's cumulative `start_seconds`; the instrumental bed as `music`;
-the chosen `aspect_ratio`; and `keep_scene_audio: true`. The default static music level already
+the chosen `aspect_ratio`; `keep_scene_audio: true`; and `frame_cadence: "on_twos"`. The
+renderer holds visuals at about 12 unique frames per second while audio remains continuous. The
+effect appears under **Effects > On Twos** in the returned editor project and updates in realtime.
+The default static music level already
 sits correctly under narration. Music auto-trims with a tail fade.
 
 The call returns `status: pending`, `generation_id`, and `edit_url`. Let the chat widget poll.
@@ -105,8 +107,7 @@ styles fit this genre:
   option that echoes the POW burst.
 
 Add the brand and product names to `vocabulary` so the transcriber spells them right. Caption the
-mixed cut, never the SFX-only cut, and caption before the snap pass or after (either works; the
-snap does not change duration).
+mixed cut, never the SFX-only cut. On Twos does not change the composition duration.
 
 ## Models and gotchas
 
@@ -147,8 +148,8 @@ snap does not change duration).
 - **Shading / 3D creep mid-clip is the #1 motion failure.** The anti-3D / anti-flicker constraint
   block (see `animate-prompts.md`) goes in every prompt; re-roll clips that pick up volume or
   shadows, and re-roll the underlying still on nano-banana-2 if a beat keeps shading.
-- **Line boiling / flicker** is the second failure. The constraint block helps; the on-twos snap
-  pass masks minor wobble; re-roll a clip whose outlines visibly boil.
+- **Line boiling / flicker** is the second failure. The constraint block helps; the final On Twos
+  effect masks minor wobble; re-roll a clip whose outlines visibly boil.
 - **`end_image_url` is Seedance-only** and only fires alongside `start_image_url`. It is the clean
   route for a before/after transformation beat, if your story has one.
 

@@ -76,8 +76,9 @@ beat map or any prompt:
 - **Smooth motion, not stop-motion judder.** AI video is smooth 24/30 fps; real stop-motion
   judders at ~12 fps. The reference clips are all smooth, so smooth is the default. Never ask a
   video model for "stop-motion judder" (it breaks the aesthetic). If the user wants the judder
-  feel, add a step-frame pass to each individual clip before composition (`fps=12,fps=24`); see
-  `references/audio-and-gotchas.md`.
+  feel, pass `frame_cadence: "on_twos"` to `advibly_render_composition`; see
+  `references/audio-and-gotchas.md`. This applies the temporal effect in the editor and final
+  render without changing the source clips or their audio.
 - **Audio in clips is SFX only, no spoken words.** Clay foley (soft press, fabric rustle,
   kettle pour, gentle settle) and quiet room tone. Explicitly forbid narration, dialogue, and
   lyrics in every motion prompt: the voiceover is mixed on top in the final step and anything
@@ -331,13 +332,15 @@ Full recipe and gotchas in `references/audio-and-gotchas.md`.
      call with a different `voice` and drop it at the beat-3 timestamp in the mix.
 2. **Music.** Generate a gentle instrumental bed from the beat map's `music` description
    (`instrumental: true`). Composition auto-trims it with a tail fade.
-3. **Optional judder, clip-level only.** If requested, apply the `fps=12,fps=24` step-frame pass
-   to each individual clip before composition; the composition tool cannot decimate frames.
+3. **Choose the final cadence.** Smooth is the default. If the user requests stop-motion judder,
+   set `frame_cadence: "on_twos"` on the composition call. Do not preprocess the individual clips.
 4. **Compose once.** Call `advibly_render_composition` with clips as ordered `scenes` (each
    `volume: 0.3`), narration as `voiceovers`, the bed as `music`, the chosen aspect, and
-   `keep_scene_audio: true`. Give any separate character line its beat's cumulative offset.
+   `keep_scene_audio: true`. Include `frame_cadence: "on_twos"` only when judder was requested.
+   Give any separate character line its beat's cumulative offset.
    It returns `status: pending`, `generation_id`, and `edit_url`.
-5. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video editor.
+5. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video
+   editor. On Twos appears under **Effects** and updates the preview in realtime.
 
 ## PHASE 7: CAPTIONS (optional, after the VO is mixed in)
 
@@ -373,7 +376,7 @@ with the final video. Only offer after the user has seen the finished ad.
 - **Clips are SFX-only; the narrator is external.** No `Narrator:` line in any video prompt;
   the voiceover generates in Phase 6 and mixes on top.
 - **Smooth motion is the default.** Never ask a video model for stop-motion judder; apply the
-  clip-level step-frame pass before composition only if requested.
+  final composition's `frame_cadence: "on_twos"` effect only if requested.
 - **`on_brand: false` always; `brand_id` always; no logo watermark.** The brand lives in the
   copied clay-label text.
 - **Self-contained prompts.** Generators have no memory of earlier calls; the STYLE LOCK and
@@ -415,5 +418,5 @@ with the final video. Only offer after the user has seen the finished ad.
   prompt.
 - `references/audio-and-gotchas.md`: the voiceover voice map and timing, the music brief, the
   final composition contract (static music, automatic tail fade, VO-overrun fix), the
-  optional stop-motion judder pass, captions, and the model / failure-mode gotchas. Read before
+  optional final-render On Twos effect, captions, and the model / failure-mode gotchas. Read before
   the audio mix or debugging a weak render.

@@ -125,7 +125,7 @@ Motion and audio heavily reinforce the physical miniature aesthetic. The animati
     "image_style_block": "Macro photography of a needle-felted wool stop-motion diorama. Every surface, object, and landscape is made of fuzzy, tactile matted wool roving with visible stray fibers. Soft, diffused studio lighting casting gentle shadows. Pastel color palette. Characters are made of felted wool with tiny black bead eyes and stitched mouths. Physical miniature aesthetic, matte finish, shallow depth of field.",
     "image_negative_prompt": "3d render, CGI, glossy, shiny, specular highlights, digital glow, smooth plastic, sharp vector lines, realistic skin, flat 2d illustration.",
     "recommended_video_model": "gemini-omni-flash",
-    "motion_prompt_dna": "Stop-motion animation on-twos, 12fps feel. Constant subtle texture boiling of the loose wool fibers on all objects. Slow, steady, smooth camera push forward. Objects move with stiff, rigid physical charm. Maintain all wool and yarn textures exactly.",
+    "motion_prompt_dna": "Constant subtle texture repositioning of the loose wool fibers on all objects. Slow, steady camera push forward. Objects move with stiff, rigid physical charm and deliberate pose-to-pose actions. Maintain all wool and yarn textures exactly. The final composition supplies the on-twos cadence.",
     "audio_recipe": {
       "voice_direction": "Female, soft, gentle, slow-paced, educational storytelling, warm tone.",
       "music_prompt": "Gentle acoustic lullaby, music box and acoustic guitar, 70 BPM, peaceful, wondrous, instrumental, modern ad underscore.",
@@ -135,7 +135,7 @@ Motion and audio heavily reinforce the physical miniature aesthetic. The animati
   "failure_modes": [
     "Model drifts into smooth 3D CGI instead of rough, fuzzy wool.",
     "Model adds digital glowing VFX instead of physical yarn representations.",
-    "Video model smooths the frame rate to 24fps/60fps, losing the stop-motion charm.",
+    "Source motion may interpolate smoothly; this is expected. Apply frame_cadence: on_twos in the final composition for the stop-motion charm.",
     "Faces become too detailed and human-like instead of simple bead eyes."
   ],
   "best_use_cases": "Explaining gentle, complex, or emotional topics; children's educational content; brand storytelling focusing on warmth and approachability."

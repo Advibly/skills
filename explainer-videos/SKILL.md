@@ -17,8 +17,8 @@ description: >
 Turn one brand topic or angle into a finished **narrated animated explainer ad** in a chosen
 visual style. One shared pipeline drives every style; the look, motion cadence, typography
 treatment, and audio character all come from a **style cartridge** in `references/styles/`.
-Everything generates and assembles on the Advibly MCP. The optional on-twos snap remains a
-clip-level preprocessing pass before composition.
+Everything generates and assembles on the Advibly MCP. On-twos styles enable the temporal effect
+on the final composition, so the editor preview and export use the same cadence.
 
 Speak in the user's language. No em dashes anywhere in output; use periods or line breaks.
 Keep labels and on-screen copy free of emoji unless asked.
@@ -35,8 +35,8 @@ pixel-art look like a SNES game lives in the chosen style file, which carries:
 2. **The motion** is added after. Each style file has a `motion_prompt_dna` (positive-phrased
    for gemini-omni-flash) and a `motion.cadence`. A style either runs **smooth 24fps** (low-poly,
    3D mix, papercraft) or **on-twos ~12fps stop-motion** (claymation, fluffy toy, whiteboard,
-   gouache, mixed-media, pixel). The stop-motion styles get a step-frame snap on each clip BEFORE
-   composition; the video model always renders too smooth to hold 12fps on its own.
+   gouache, mixed-media, pixel). The stop-motion styles pass `frame_cadence: "on_twos"` to the
+   final composition; the video model always renders too smooth to hold 12fps on its own.
 3. **The audio** completes it. Each style file has an `audio_recipe` (voice direction, one
    music prompt, one SFX description). Clips are SFX-only; the narration and music are generated
    separately and mixed on top.
@@ -68,7 +68,7 @@ Two shared references:
 - `references/style-catalog.md`: the menu of ten styles with one-line signatures, the
   recommend-from-brand logic, and the quick model / cadence / voice table. Read at style-pick.
 - `references/pipeline-and-audio.md`: the Advibly asset workflow, the model matrix, the
-   clip-level step-frame snap, `advibly_render_composition`,
+   final-render On Twos effect, `advibly_render_composition`,
   captions, and failure modes. Read before the keyframe, motion, or audio steps.
 
 ## Hard defaults (do not drift)
@@ -104,10 +104,10 @@ Two shared references:
   Express a faster style through action beats, internal transitions, and editing within a 4 to
   6-second clip. Treat 7 to 10 seconds as an explicit exception for a beat that genuinely needs
   more room, not the default.
-- **Cadence and the step-frame snap:** if the style's `motion.cadence` is on-twos / ~12fps
-  stop-motion, apply the `fps=12,fps=24` snap to every clip BEFORE composition (recipe in
-  `pipeline-and-audio.md`). Never ask the video model for 12fps; it renders smooth and the snap
-  is what sells the stop-motion. Smooth-24fps styles skip the snap.
+- **Cadence and the final-render effect:** if the style's `motion.cadence` is on-twos / ~12fps
+  stop-motion, pass `frame_cadence: "on_twos"` to the final composition (recipe in
+  `pipeline-and-audio.md`). Never ask the video model for 12fps; it renders smooth and the final
+  temporal effect is what sells the stop-motion. Smooth-24fps styles omit it or pass `"smooth"`.
 - **Audio in clips is SFX only, no spoken words.** Forbid narration, dialogue, and lyrics in
   every motion prompt; the voiceover is mixed on top and anything spoken in a clip collides
   with it.
@@ -241,18 +241,18 @@ advibly_generate_video
 
 - **Omni Flash takes positive-only wording**: the style's `motion_prompt_dna` is already phrased
   this way. Convert any "no X" you add into a positive ("the texture stays exactly as printed").
-- **Do not ask for 12fps.** The stop-motion cadence is added by the step-frame snap in Phase 5.5,
+- **Do not ask for 12fps.** The stop-motion cadence is added by the final-render effect in Phase 5.5,
   not the video model. Ask the model only for the style's element and camera motion.
 - Audio direction in every prompt: the style's SFX character only, no voiceover, no spoken
   words, no music with lyrics.
 - Show each clip: keep, re-edit (same keyframe, adjusted motion prompt), or re-roll. Shading /
   3D creep and texture-smoothing are the top failures; the style's `failure_modes` list the guard.
 
-## PHASE 5.5: STEP-FRAME EACH CLIP (conditional)
+## PHASE 5.5: CHOOSE FINAL CADENCE (conditional)
 
-Only if the style's `motion.cadence` is on-twos / ~12fps, apply the step-frame snap to every
-individual approved clip before Phase 6. The composition tool cannot decimate frames.
-Smooth-24fps styles skip it.
+If the style's `motion.cadence` is on-twos / ~12fps, set the final composition cadence to
+`"on_twos"`. Do not preprocess the individual approved clips. Smooth-24fps styles use
+`"smooth"` or omit the option.
 
 ## PHASE 6: VOICEOVER + MUSIC + FINAL MIX
 
@@ -269,11 +269,13 @@ Follow `pipeline-and-audio.md`. In short:
 3. **Compose once.** Call `advibly_render_composition` with ordered clips as `scenes` (use
    `volume: 0.2` for clip SFX), one `voiceovers` entry per shot with `start_seconds` equal to its
    cumulative offset, the bed as `music`, the chosen aspect, and `keep_scene_audio: true`. **Leave
-   `music_volume` unset.** The renderer ducks the bed against the narration automatically (it dips
+   `music_volume` unset.** For an on-twos style also pass `frame_cadence: "on_twos"`; for a smooth
+   style omit it or pass `"smooth"`. The renderer ducks the bed against the narration automatically (it dips
    to ~35% while a line plays and swells back between them), so a hand-set level is not needed and
    a low one (0.08) would duck into inaudibility. It returns `status: pending`,
    `generation_id`, and `edit_url`; let the chat widget poll it.
-4. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video editor.
+4. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video
+   editor. On Twos appears under **Effects** and updates the preview in realtime.
 
 ## PHASE 7: CAPTIONS (optional)
 
@@ -300,7 +302,7 @@ with the final video. Only offer after the user has seen the finished ad.
 - **One style, one image model, one video model per delivered ad.** Swap the whole set or nothing.
 - **Faithful, not on-brand:** `on_brand: false` always, `brand_id` always, no logo watermark by
   default.
-- **Stop-motion styles get the `fps=12,fps=24` snap on each clip before composition; smooth styles do not.** The
+- **Stop-motion styles get `frame_cadence: "on_twos"` on the final composition; smooth styles do not.** The
   video model never holds 12fps on its own.
 - **SFX-only clips.** VO and music generate separately and mix on top; never let a clip speak.
 - **Self-contained prompts.** Generators have no memory of earlier calls; the style block travels
@@ -323,5 +325,5 @@ with the final video. Only offer after the user has seen the finished ad.
 - `references/story-and-beats.md`: the narrative arc library, hook patterns, beat and shot
   cadence, the beat-map JSON schema, and anti-monotony rules. Read before writing any beat map.
 - `references/pipeline-and-audio.md`: the asset workflow, the image and video model matrix, the
-  clip-level step-frame snap, `advibly_render_composition`, captions, and failure modes. Read before the
+  final-render On Twos effect, `advibly_render_composition`, captions, and failure modes. Read before the
   keyframe, motion, or audio steps.

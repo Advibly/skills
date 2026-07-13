@@ -105,7 +105,7 @@ The audio profile heavily reinforces the tactile, handcrafted visual medium. The
     "image_style_block": "A flat 2.5D mixed-media paper-cut collage. The main subject is a desaturated greyscale photograph isolated with a thick, rough, uneven white paper border, as if hastily cut out with scissors. The subject is placed on a flat, heavily textured, grainy construction-paper background. There is a harsh, stark black drop shadow cast directly behind the subject and environment elements, creating a multiplane depth effect. Include accents of bright red and blue rough marker scribbles on the paper. High contrast, orthographic perspective, tactile craft aesthetic.",
     "image_negative_prompt": "No 3D rendering, no smooth gradients, no specular highlights, no glossy materials, no depth of field, no realistic perspective, no soft shadows, no digital glow, no smooth vector art.",
     "recommended_video_model": "gemini-omni-flash",
-    "motion_prompt_dna": "Animate with a low-framerate 12fps stop-motion papercraft style. Maintain absolute stiffness in the paper elements with no organic bending. Slide elements linearly across the screen. Keep the heavy drop shadows locked to the elements. Introduce a subtle, continuous jitter to the paper placement to simulate stop-motion photography.",
+    "motion_prompt_dna": "Animate with rigid pose-to-pose papercraft movement. Maintain absolute stiffness in the paper elements with no organic bending. Slide elements linearly across the screen. Keep the heavy drop shadows locked to the elements. Introduce subtle manual placement jitter in the paper. The final composition supplies the on-twos cadence.",
     "audio_recipe": {
       "voice_direction": "Female, fast-paced, educational, punchy, dramatic articulation on key numbers and statistics.",
       "music_prompt": "Instrumental, modern ad underscore, driving staccato strings, heavy ticking percussion, building tension, 120 BPM.",
@@ -114,7 +114,7 @@ The audio profile heavily reinforces the tactile, handcrafted visual medium. The
   },
   "failure_modes": [
     "AI generates 3D volumetric shadows instead of flat, duplicate-layer drop shadows.",
-    "Video model smooths the framerate to 24/60fps, destroying the stop-motion tactile feel.",
+    "Source motion may interpolate smoothly; this is expected. Apply frame_cadence: on_twos in the final composition for the tactile cadence.",
     "Image model blends the subject into the background rather than keeping the distinct, sloppy white scissor-cut border.",
     "AI attempts to add standard particle VFX (smoke, fire, sparks) instead of physical paper-cut representations of those effects."
   ],
@@ -134,5 +134,5 @@ The audio profile heavily reinforces the tactile, handcrafted visual medium. The
 
 1. **The "Melt" Effect:** Video models will instinctively try to morph or squash/stretch the elements as they move. Guard against this by explicitly demanding "rigid paper physics" and "no organic bending."
 2. **Loss of the White Border:** Image models often try to seamlessly composite subjects into their environments. The rigid negative prompt ("no realistic perspective") helps, but ensuring the prompt emphasizes "hastily cut out with scissors" forces the AI to treat the border as part of the object itself.
-3. **Smooth Framerates:** AI interpolation wants to make motion buttery smooth. If the video model doesn't natively support stepping to 12fps, this must be enforced in post-production by dropping every other frame (posterize time) in your NLE/ffmpeg step.
+3. **Smooth Framerates:** AI interpolation makes the source motion smooth. Pass `frame_cadence: "on_twos"` to `advibly_render_composition`; the editor and export then share the same posterized-time effect.
 4. **Soft Shadows:** Generative models love ray-traced, soft falloff shadows. The style fails if the shadows aren't hard, duplicated shapes offset from the main layer.

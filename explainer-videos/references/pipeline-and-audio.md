@@ -1,8 +1,8 @@
 # Pipeline and audio (Advibly mechanics)
 
 The shared machinery under every style: the asset workflow, the image and video model matrix, the
-on-twos step-frame snap, generating and composition the audio (`advibly_render_composition` by default, an
-ffmpeg recipe for full control), captions, and failure modes. Read before the keyframe, motion, or
+On Twos final-render effect, generating and composing the audio with
+`advibly_render_composition`, captions, and failure modes. Read before the keyframe, motion, or
 audio steps. Style-specific look/motion/audio DNA lives in the style file; this file is
 style-agnostic plumbing.
 
@@ -56,30 +56,25 @@ faster feel with motion, internal transitions, or downstream edits inside the va
   is Omni Flash.
 - **Omni Flash is positive-only.** The style's `motion_prompt_dna` is already phrased this way;
   convert any "no X" you add into a positive ("the texture stays exactly as printed").
-- **Do not ask the video model for 12fps.** Cadence is set by the snap pass below. Ask only for the
+- **Do not ask the video model for 12fps.** Cadence is set by the final composition below. Ask only for the
   style's element and camera motion.
 - **SFX-only, no spoken words** in every clip prompt; the VO is composed on top.
 - Escalation for a stubborn clip: two Omni Flash retries (reroll or adjust the motion prompt), then
   the style's Seedance route if it needs an end frame.
 
-## The on-twos step-frame snap (stop-motion styles only)
+## The On Twos final-render effect (stop-motion styles only)
 
 The stop-motion styles (Claymation, Felted Wool, Whiteboard, Textured Gouache, Mixed-Media, Pixel
-Art) read as ~12fps. The video model renders smooth, so the snap is added **after** the mix, never
-in a video prompt. The catalog's "On-twos snap" column and the beat map's `snap` field say when.
+Art) read as ~12fps. The video model renders smooth, so cadence is applied by passing
+`frame_cadence: "on_twos"` to `advibly_render_composition`, never by asking the video model to
+render at 12fps. The catalog's "On-twos snap" column and the beat map's `snap` field say when.
 
-```bash
-# drop to 12 fps, then duplicate frames back to 24 for the authentic pose-to-pose snap; audio intact
-ffmpeg -i shot.mp4 -filter:v "fps=12,fps=24" -c:a copy shot-snap.mp4
-```
-
-- Apply it to the **final mixed file** (last step), so it snaps the whole delivered cut and masks
-  minor line wobble from the video model. For a slightly softer snap use `fps=15,fps=30`.
+- The renderer holds visuals at about 12 unique frames per second while preserving continuous
+  clip audio, voiceover, and music. The same effect appears in the returned editor project under
+  **Effects > On Twos**, where it can be previewed or toggled in realtime.
 - **Smooth styles skip it** (Low-Poly, Cozy Kawaii, Papercraft). **Cinematic 2D Print skips it too**:
   its choppiness comes from hard cuts and limited element motion, and a global snap would wrongly
   choppify its smooth camera push. A global snap on a smooth style ruins it.
-- **No shell (claude.ai, mobile):** the snap cannot be applied. Ship the smooth mix and tell the
-  user they can apply a posterize-time / frame-rate effect in CapCut, or accept the smoother look.
 
 ## Voiceover (advibly_generate_voiceover)
 
@@ -135,8 +130,8 @@ the composition automatically trims them to length.
 
 ## Final composition (one call)
 
-For on-twos styles, first apply the step-frame pass to each individual clip. The composition tool
-cannot decimate frames. Then call `advibly_render_composition` once:
+Call `advibly_render_composition` once. For on-twos styles include
+`frame_cadence: "on_twos"`; for smooth styles omit it or pass `"smooth"`:
 
 - `scenes`: 1 to 12 ordered clip generation ids or HTTPS URLs; set each scene's `volume` to
   `0.2` for quiet SFX.
@@ -150,6 +145,8 @@ cannot decimate frames. Then call `advibly_render_composition` once:
   to raise the bed for a piece with no voiceover at all.
 - `aspect_ratio`: the chosen delivery aspect.
 - `keep_scene_audio: true`.
+- `frame_cadence`: `"on_twos"` only when the style catalog marks Snap = Yes; otherwise
+  `"smooth"` or unset.
 
 Ducking is handled by the renderer, not by you. Do not hand-ride the music level, add loudness
 targets, or try to fake a duck by splitting the bed into segments. The call returns
@@ -181,6 +178,6 @@ the user wants accessibility subtitles.
   keeps shading, reroll it on nano-banana-2 (for the texture styles). The style's `failure_modes`
   list the exact guard per style.
 - **Smooth motion where it should be stop-motion**: expected. The video model cannot hold 12fps.
-  Fix it with the snap pass, not by re-rolling.
+  Fix it with `frame_cadence: "on_twos"` on the composition, not by re-rolling.
 - **VO longer than the video**: tighten the script and regenerate (cheap); never time-stretch.
 - **Composed video missing the voiceover**: confirm every narration generation id or URL is present in `voiceovers` and its `start_seconds` is correct.

@@ -16,6 +16,10 @@ Speak in the user's language. No em dashes anywhere in output; use periods or li
 - **Set shape:** 4 scenes, 8 seconds per clip, by default. Each scene is one still pair (empty field plus finished composition) and one video clip. Only deviate when the user asks for a different count or length.
 - **Faithful color, not brand palette:** pass `on_brand: false`. The decoded spec owns the color field and palette, so the brand-kit sheet must not be force-attached or it recolors the look. `brand_id` is still **required** on every generation call (it files the work in the user's library); it does not style the output when `on_brand` is false. Only set `on_brand: true` when the user explicitly wants the collage recolored to their brand.
 - **Video model:** `advibly_generate_video` with `model: "gemini-omni-flash"` (8s or 10s per clip, 9:16 or 16:9, native audio). Omni Flash animates from a single start frame, so the default assembly opens on the empty-field still and the prompt drives the pieces sliding in. It has no end frame: when the clip must land on the exact finished composition, or you need 1:1 or a 15s duration, switch that set to `seedance-2.0` (supports `start_image_url` + `end_image_url` for a mechanical empty-to-finished interpolation, plus all aspect ratios). See B3 for both routes. Pick one model per delivered set and stay on it.
+- **On-twos cadence is default-ON.** Generate the source clips smoothly, then pass
+  `frame_cadence: "on_twos"` to the final `advibly_render_composition` call. The editor and
+  exported render will hold the visuals at about 12 unique frames per second while clip audio
+  stays continuous. Skip it only when the user explicitly wants smooth paper motion.
 - **No text-overlay tool.** Advibly has none by design. Scene labels are burned in at image generation by the image model. gpt-image-2 is strong at native text; if a label still keeps degrading, reroll with `num_images` (up to 4), simplify the label, or try `seedream-5-pro` for that one scene. Never plan to overlay text afterward.
 - **Tools are deferred.** Load the exact Advibly tool schemas with tool search before the first call each session (search "advibly generate image", "advibly generate video", "advibly upload asset", "advibly list brands"). Confirm parameter names against what loads rather than assuming.
 
@@ -223,11 +227,12 @@ Lock the look once (color field, halftone and cut convention, label treatment), 
 ### B5: Assemble the set (optional)
 
 Call `advibly_render_composition` once with the generation ids or HTTPS URLs as ordered `scenes`,
-the set's aspect ratio, and `keep_scene_audio: true`. It returns `status: pending`, a
+the set's aspect ratio, `keep_scene_audio: true`, and `frame_cadence: "on_twos"`. Omit the
+cadence or pass `"smooth"` only when the user explicitly requests smooth motion. It returns `status: pending`, a
 `generation_id`, and an `edit_url`; the chat widget polls the render. Use
 `advibly_get_generation` with `wait: true` only if a finished URL is needed for publishing.
 Deliver the render and mention the `edit_url` so the user can fine-tune it in the Advibly video
-editor.
+editor. The effect appears under **Effects > On Twos** and can be toggled there in realtime.
 
 ### B6: Optional publish
 

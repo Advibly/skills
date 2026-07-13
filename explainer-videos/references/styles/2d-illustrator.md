@@ -124,7 +124,7 @@ Motion is intentionally degraded to simulate animation "on twos" (around 12 fram
     "image_style_block": "Lineless gouache digital painting, retro 2D animation style. Heavy toothy paper grain texture throughout. Dry-brush stippled shading, sharp angular geometric shadow planes. Set against a stark, flat, deep royal blue (#121A9E) background void. High contrast lighting, matte finish, zero specular highlights. Subject has warm earthy tones, off-white and black details, with small vibrant magenta and yellow accents.",
     "image_negative_prompt": "Outlines, lineart, ink, smooth 3D render, glossy, CGI, soft gradients, photographic, photorealism, depth of field, cluttered background, realistic environment, horizon line.",
     "recommended_video_model": "gemini-omni-flash",
-    "motion_prompt_dna": "Animate with a rigid, jittery 12fps stop-motion cadence on twos. Hold the grainy paper texture static over the entire frame. Generate sudden, angular, hand-painted white speed lines and dark geometric shadow streaks snapping rapidly across the flat background.",
+    "motion_prompt_dna": "Animate with rigid pose-to-pose actions and sudden angular changes. Hold the grainy paper texture static over the entire frame. Generate sudden, angular, hand-painted white speed lines and dark geometric shadow streaks snapping rapidly across the flat background. The final composition supplies the on-twos cadence.",
     "audio_recipe": {
       "voice_direction": "Male voice, deep register, calm, effortless, casual instructional tone, speaking slowly at 2.5 words per second.",
       "music_prompt": "Lo-fi hip-hop instrumental, modern ad underscore, 85 BPM, boom-bap drums, vinyl crackle, mellow electric piano chords, relaxed and chill.",
@@ -133,7 +133,7 @@ Motion is intentionally degraded to simulate animation "on twos" (around 12 fram
   },
   "failure_modes": [
     "Model attempts to add a realistic floor or horizon line; guard with 'flat infinite void' and negative prompt 'horizon line, realistic environment'.",
-    "Video model introduces smooth 60fps interpolation or motion blur; guard by enforcing '12fps, stop-motion cadence, on twos' in motion prompt.",
+    "Source motion may interpolate smoothly; this is expected. Apply frame_cadence: on_twos in the final composition rather than asking the video model for a frame rate.",
     "Image model renders soft gradients for shading; guard with 'sharp angular geometric shadow planes' and negative prompt 'soft gradients, 3D smooth render'.",
     "Loss of tactile surface feel; guard by heavily weighting 'heavy toothy paper grain' and using nano-banana-2."
   ],
@@ -145,11 +145,11 @@ Motion is intentionally degraded to simulate animation "on twos" (around 12 fram
 ### 4. Notes on the `reproduce` block
 
 * **`recommended_image_model`**: `nano-banana-2` is strictly required here. The entire style relies on holding organic dry-brush and paper grain textures. Models like `gpt-image-2` will likely smooth this out into vector art.
-* **`recommended_video_model`**: `gemini-omni-flash` is best because it excels at maintaining intense, positive-prompted stylistic overlays (like the animated speed lines and 12fps jitter) without needing an exact end frame, allowing the action to flow naturally off the initial prompt.
-* **`motion_prompt_dna`**: Relies entirely on positive phrasing to force the choppiness. Video models inherently want to smooth things out; instructing it to use "stop-motion cadence on twos" overrides the default interpolation.
+* **`recommended_video_model`**: `gemini-omni-flash` is best because it excels at maintaining intense, positive-prompted stylistic overlays like animated speed lines without needing an exact end frame, allowing the action to flow naturally off the initial prompt.
+* **`motion_prompt_dna`**: Describes rigid pose-to-pose actions and texture behavior. Do not ask the model for a frame rate. `frame_cadence: "on_twos"` on the final composition supplies the choppiness consistently.
 
 ### 5. Failure modes
 
 * **The "Gradient Smoothing" Trap:** Generative image models often default to soft, 3D-like shading. If the hard, geometric shadow planes are lost, the vintage gouache feel is destroyed.
 * **The "Spatial Reality" Trap:** The models will aggressively try to anchor the subject to a realistic floor or room. The background *must* remain an abstract color void.
-* **The "Butter Smooth" Trap:** Video models will try to generate fluid 24fps/60fps motion with motion blur. This ruins the stylized "on twos" animation feel. Strict prompting for jittery, low-fps motion is required.
+* **The "Butter Smooth" Trap:** Video models generate fluid source motion. Preserve the rigid action language, then use `frame_cadence: "on_twos"` in `advibly_render_composition` for the stylized cadence.

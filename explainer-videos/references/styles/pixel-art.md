@@ -105,7 +105,7 @@ Motion mimics traditional sprite-based animation, running at a simulated low fra
     "image_style_block": "16-bit retro video game pixel art, strict crisp pixel edges, zero anti-aliasing. High contrast saturated palette. 2D side-scrolling perspective with deep parallax layers. Characters have chibi proportions (1:3 head-to-body ratio), oversized eyes, and a strict 1-pixel dark outline. Shading is stepped block colors with checkerboard dithering for gradients. No smooth shading or 3D elements.",
     "image_negative_prompt": "No 3D renders, no smooth gradients, no anti-aliasing, no realistic lighting, no high-poly, no vector art, no blurry edges, no depth of field.",
     "recommended_video_model": "gemini-omni-flash",
-    "motion_prompt_dna": "Animate as a 16-bit video game. Snappy, low-framerate sprite animation on twos. Add blocky pixel particle explosions and screen shake on impact. Maintain rigid, sharp pixel edges without blurring. Characters move with fast squash and stretch. Keep camera completely static.",
+    "motion_prompt_dna": "Animate as a 16-bit video game with snappy pose-to-pose sprite actions. Add blocky pixel particle explosions and screen shake on impact. Maintain rigid, sharp pixel edges without blurring. Characters move with fast squash and stretch. Keep camera completely static. The final composition supplies the on-twos cadence.",
     "audio_recipe": {
       "voice_direction": "Energetic retro video game announcer, urgent and triumphant.",
       "music_prompt": "Fast 140 BPM chiptune, epic 8-bit retro video game battle music, driving square wave melody, instrumental.",
@@ -115,7 +115,7 @@ Motion mimics traditional sprite-based animation, running at a simulated low fra
   "failure_modes": [
     "Model introduces anti-aliasing or blurring, ruining the crisp pixel aesthetic. Guard: Heavily enforce 'zero anti-aliasing' and 'strict pixel edges' in prompts.",
     "Model attempts 3D lighting or smooth gradients instead of dithering. Guard: Specify 'stepped block shading' and 'checkerboard dithering'.",
-    "Video model interpolates frames too smoothly, losing the retro feel. Guard: Specify 'low-framerate sprite animation on twos'."
+    "Source motion may interpolate smoothly; this is expected. Apply frame_cadence: on_twos in the final composition for the retro cadence."
   ],
   "best_use_cases": "Gamified explainers, tech or cybersecurity metaphors, nostalgic brand activations, and high-energy educational shorts."
 }

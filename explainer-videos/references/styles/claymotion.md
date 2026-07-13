@@ -107,7 +107,7 @@ Audio mirrors the physical miniature aesthetic. The voiceover is energetic and n
     "image_style_block": "Macro photography of a plasticine stop-motion diorama. Matte clay textures with visible fingerprint indentations and tool marks. Chunky, rounded modular designs with no sharp edges. Protruding spherical eyes. Built as a miniature physical set with forced perspective. Lighting is soft, directional miniature studio lighting creating short drop shadows. If text is present, it must be physical, 3D extruded clay letters baked into the scene and interacting with the lighting.",
     "image_negative_prompt": "No 3D CGI render, no digital gloss, no smooth plastic, no realistic textures, no thin linework, no cinematic depth of field blurring, no flat graphic text overlays.",
     "recommended_video_model": "gemini-omni-flash",
-    "motion_prompt_dna": "Animate with a 12fps stop-motion cadence. The camera is locked off with a very slow, steady push-in. The characters move with stiff, physical pivots. Maintain a constant 'boiling' effect where the clay texture, fingerprints, and micro-geometry jitter slightly on every frame to simulate manual manipulation. Any VFX should look like physically sculpted clay shapes holding in space.",
+    "motion_prompt_dna": "The camera is locked off with a very slow, steady push-in. The characters move with stiff, physical pivots and deliberate pose-to-pose actions. Maintain subtle manual texture repositioning in the clay, fingerprints, and micro-geometry. Any VFX should look like physically sculpted clay shapes holding in space. The final composition supplies the on-twos cadence.",
     "audio_recipe": {
       "voice_direction": "Warm, engaging, upbeat male storyteller, steady and clear narration.",
       "music_prompt": "Instrumental, modern ad underscore. Whimsical acoustic track transitioning from pizzicato strings and marimba to a gentle acoustic guitar.",
@@ -116,7 +116,7 @@ Audio mirrors the physical miniature aesthetic. The voiceover is energetic and n
   },
   "failure_modes": [
     "Model smoothes out the clay, resulting in a generic 3D CGI plastic look rather than hand-sculpted plasticine.",
-    "Video model interpolates frames to 24fps/60fps, destroying the critical 12fps stop-motion jitter and texture boiling.",
+    "Source motion may interpolate smoothly; this is expected. Apply frame_cadence: on_twos in the final composition to create the critical 12fps feel.",
     "Typography is rendered as a clean, digital 2D overlay rather than bumpy, physical 3D clay letters casting shadows.",
     "Introduction of realistic textures (e.g., real fur, realistic water) that break the miniature, mixed-media diorama illusion."
   ],
@@ -129,13 +129,13 @@ Audio mirrors the physical miniature aesthetic. The voiceover is energetic and n
 
 * **`image_style_block`**: Designed to force physical imperfections. By explicitly demanding "fingerprint indentations" and "miniature studio lighting", it prevents models from defaulting to Pixar-style smooth 3D rendering.
 * **`image_negative_prompt`**: Crucial for stripping out digital sheen. Forbidding "cinematic depth of field" ensures the background layers remain readable, mimicking the physical diorama backdrop seen in the reference.
-* **`motion_prompt_dna`**: Focuses entirely on the *cadence* and the *texture boiling*. Since `gemini-omni-flash` operates on positive phrasing, framing the jitter as "maintain a constant boiling effect" ensures the model actively generates the stop-motion feel rather than attempting smooth physics.
+* **`motion_prompt_dna`**: Focuses on stiff physical pivots and manual texture behavior. The source may remain smooth; `frame_cadence: "on_twos"` on the final composition supplies the stable stop-motion cadence.
 * **`audio_recipe`**: Breaks the audio into discrete layers. The SFX prompt specifically asks for "tactile, squishy" sounds to ground the visual medium in the audio mix.
 * **Model Selection**: `nano-banana-2` is chosen for image generation because holding organic, imperfect textures like clay grain and fingerprints is its primary strength. `gemini-omni-flash` is selected for video because image-to-video from a single frame is ideal for establishing a static diorama scene with subtle, continuous texture boiling.
 
 ### 5. Failure modes
 
 1. **Digital Smoothing (The "Toy Story" effect):** AI image models often "clean up" noise. If the prompt lacks heavy emphasis on fingerprints and tool marks, the result will look like slick, mass-produced plastic toys instead of hand-sculpted clay. *Guard: Over-index on words like "smudged", "thumbprints", and "uneven" in the prompt.*
-2. **Smooth Interpolation:** Video models naturally want to create fluid, 24fps or 60fps motion. This completely breaks the stop-motion illusion. *Guard: Explicitly state "12fps stop-motion cadence" and "stiff, physical pivots" in the motion prompt.*
+2. **Smooth Interpolation:** Video models naturally create fluid source motion. *Guard: Keep "stiff, physical pivots" in the motion prompt and pass `frame_cadence: "on_twos"` to the final composition.*
 3. **Floating Typography:** Models struggle to integrate text physically into scenes. They often default to superimposing clean vector fonts over the image. *Guard: Use the phrase "physical 3D extruded clay letters baked into the scene" and demand drop shadows.*
 4. **Scale Confusion:** The illusion relies on everything looking miniature. If the model introduces expansive landscapes or atmospheric haze, the diorama feel is lost. *Guard: Reinforce "miniature set", "macro photography", and "flat background layers".*

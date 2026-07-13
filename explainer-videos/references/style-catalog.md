@@ -67,8 +67,9 @@ Pull the authoritative values from the style file; this table is the at-a-glance
 
 Notes on the routing:
 
-- **Snap = Yes** means apply the `fps=12,fps=24` step-frame pass to each clip before composition (Phase 5.5).
-  The video model always renders too smooth; the snap is what sells the stop-motion. **Snap = No**
+- **Snap = Yes** means pass `frame_cadence: "on_twos"` to `advibly_render_composition` (Phase 6).
+  The final-render temporal effect supplies the cadence and appears in the editor under Effects.
+  **Snap = No**
   styles are meant to be smooth (low-poly, kawaii, papercraft) or get their choppiness from hard
   cuts and limited element motion (Cinematic 2D Print), so a global snap would wrongly choppify
   their smooth camera moves.

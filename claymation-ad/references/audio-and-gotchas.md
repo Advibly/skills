@@ -76,7 +76,8 @@ instrumental; lyrics fight the narration. Tracks run longer than the ad; trim in
 
 Call `advibly_render_composition` once with the approved clips as ordered `scenes`, each with
 `volume: 0.3`; the narration in `voiceovers`; the instrumental generation as `music`; the
-chosen `aspect_ratio`; and `keep_scene_audio: true`. A separately voiced character line gets
+chosen `aspect_ratio`; and `keep_scene_audio: true`. If the user requested stop-motion judder,
+also pass `frame_cadence: "on_twos"`; otherwise leave cadence smooth. A separately voiced character line gets
 its own voiceover entry at that beat's cumulative `start_seconds`. The default static music bed
 already sits correctly under narration, so do not add dynamic gain processing or loudness targets.
 Music is automatically trimmed to the composition with a tail fade.
@@ -86,18 +87,13 @@ Use `advibly_get_generation` with `wait: true` only when the finished URL is nee
 or publishing. Mention the edit URL in final delivery so the user can fine-tune the ad in the
 Advibly video editor.
 
-## Optional: clip-level stop-motion judder pass
+## Optional: final-render stop-motion judder
 
 Smooth motion is the default (all the reference clips are smooth). Only if the user explicitly
-wants the ~12 fps stop-motion judder, add it **after** the mix, never in a video prompt:
-
-```bash
-ffmpeg -i clay-beat.mp4 -filter:v "fps=12,fps=24" -c:a copy clay-beat-judder.mp4
-```
-
-This drops to 12 fps then duplicates frames back to 24, producing visible judder while keeping
-the audio intact. Generated-video models cannot reliably control framerate, and asking for
-"judder" breaks the aesthetic, so this is strictly a post step.
+wants the ~12 fps stop-motion judder, pass `frame_cadence: "on_twos"` to
+`advibly_render_composition`, never in a video prompt. The temporal effect holds visuals while
+keeping scene audio, narration, and music continuous. It appears in the returned project under
+**Effects > On Twos** for realtime preview and adjustment.
 
 ## Captions (optional, after the VO is mixed in)
 

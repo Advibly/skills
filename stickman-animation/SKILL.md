@@ -4,7 +4,7 @@ description: >
   Turn a brand into a finished 2D stick-figure comic ad on the Advibly MCP. Invent and approve
   an original concept and beat list, generate consistent flat black-outline storyboard stills
   on a white void with restrained brand accents, animate them with Gemini Omni Flash by default
-  or Seedance 2.0 as fallback, apply an on-twos snap, then compose voiceover, music, and comic
+  or Seedance 2.0 as fallback, apply an on-twos snap in the final composition, then compose voiceover, music, and comic
   SFX. Trigger for "stickman ad", "stick figure ad", "stick-figure animation", "2D stick
   figure explainer", "doodle animation ad", "minimalist line animation ad", "animate a stick
   figure", or a reference with the flat black stick-figure comic look. Use even without the word
@@ -20,7 +20,7 @@ slice-of-life, whatever fits the brief) and render it in the fixed stickman look
 on **minimalist vector stick-figure comic animation**: uniform clean black outlines on a pure white
 void, flat cartoon fills with zero shading, snappy limited animation, comic-book VFX, and a strict
 two-accent color system. Everything generates on the Advibly MCP (images, clips, stitch, voiceover,
-music and composition); only the clip-level on-twos snap is a local preprocessing pass.
+music and composition), including the final-render On Twos effect.
 
 Speak in the user's language. No em dashes anywhere in output; use periods or line breaks.
 Keep on-screen copy and labels free of emoji unless asked.
@@ -93,7 +93,7 @@ invented per brief. Read both before designing the concept or writing any prompt
   either model, use it for every clip and never switch models automatically.
 - **Snappy limited animation, not smooth 24fps.** This genre's signature is pose-to-pose limited
   animation on twos (~12 fps), the opposite of the claymation skill. AI video renders smooth, so
-  **generate smooth, then apply a step-frame pass** (`fps=12,fps=24`) to each clip before composition to get
+  **generate smooth, then pass `frame_cadence: "on_twos"` to `advibly_render_composition`** to get
   the authentic stick-figure snap. This is default-ON for this genre (see
   `references/audio-and-gotchas.md`); skip it only if the user wants fully smooth motion. Never ask
   the video model itself for "12fps" or "choppy" (it degrades the render); the snap is a post step.
@@ -329,10 +329,11 @@ advibly_generate_video
   2-retry cap per beat; if a third attempt still picks up shading or morphs the lines, regenerate
   that still on `nano-banana-2` and re-animate.
 
-## PHASE 5: CLIP-LEVEL ON-TWOS PASS
+## PHASE 5: CHOOSE FINAL CADENCE
 
-Apply the `fps=12,fps=24` step-frame pass to every individual approved clip before composition.
-Skip only if the user wants fully smooth motion. The composition tool cannot decimate frames.
+Use On Twos by default. Do not modify the individual approved clips. Phase 6 applies
+`frame_cadence: "on_twos"` once at composition time. Skip it only if the user wants fully smooth
+motion.
 
 ## PHASE 6: VOICEOVER + MUSIC + FINAL MIX
 
@@ -348,11 +349,14 @@ Full recipe and gotchas in `references/audio-and-gotchas.md`.
    single mood; if your story has a clear turn (a problem-to-relief pivot, a reveal), generate two
    beds and hard-cut between them at that turn's timestamp in the mix. This is optional, driven by
    the story, not a required drone-to-beat switch.
-3. **Compose once.** Call `advibly_render_composition` with processed clips as ordered `scenes`
+3. **Compose once.** Call `advibly_render_composition` with approved clips as ordered `scenes`
    (each `volume: 0.2`), one `voiceovers` entry per beat at its cumulative `start_seconds`, the
-   bed as `music`, the chosen aspect, and `keep_scene_audio: true`. The default static music level
-   is correct under VO. It returns `status: pending`, `generation_id`, and `edit_url`.
-4. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video editor.
+   bed as `music`, the chosen aspect, `keep_scene_audio: true`, and
+   `frame_cadence: "on_twos"`. Omit the cadence or pass `"smooth"` only when the user explicitly
+   requests smooth motion. The default static music level is correct under VO. It returns
+   `status: pending`, `generation_id`, and `edit_url`.
+4. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video
+   editor. On Twos appears under **Effects** and updates the preview in realtime.
 
 ## PHASE 7: CAPTIONS (optional, after the VO is mixed in)
 
@@ -393,8 +397,8 @@ with the final video. Only offer after the user has seen the finished ad.
   only as the approved secondary fallback or when the user explicitly selected it.
 - **Clips are SFX-only; the narrator is external.** No `Narrator:` line in any video prompt; the
   voiceover generates in Phase 6 and mixes on top.
-- **The snap is a post step.** Generate smooth motion; add the on-twos limited-animation feel with
-  the clip-level step-frame pass before composition. Never ask the video model for "12fps" or "choppy".
+- **The snap is a final-render effect.** Generate smooth motion; add the on-twos limited-animation feel with
+  `frame_cadence: "on_twos"` on the final composition. Never ask the video model for "12fps" or "choppy".
 - **`brand_id` always; no logo watermark from the kit.** The brand lives in the copied flat-prop
   label text and the accent color.
 - **Self-contained prompts.** Generators have no memory of earlier calls; the STYLE LOCK and COLOR
@@ -419,7 +423,7 @@ with the final video. Only offer after the user has seen the finished ad.
   large and close (30 to 40 percent of frame) on beats that feature it; copy the label/logo text
   exactly in the prompt.
 - **Line flicker in motion.** The video model can wobble the outlines frame to frame. The
-  anti-flicker constraint helps; the on-twos snap pass also masks minor wobble. Re-roll a clip whose
+  anti-flicker constraint helps; the final On Twos effect also masks minor wobble. Re-roll a clip whose
   lines visibly boil.
 - **The announcer voice is one of five xAI voices**, not a specific casting. `leo` is the closest
   punchy-announcer match; pick one and keep it across the whole ad.
@@ -438,5 +442,5 @@ with the final video. Only offer after the user has seen the finished ad.
   labeled example, cross-clip continuity, and the per-clip QA checklist. Read before writing any
   motion prompt.
 - `references/audio-and-gotchas.md`: the voice map and timing, per-line VO placement, the one-or-two
-  bed music guidance, the final composition contract (per-beat VO offsets, static music, automatic trim), the on-twos snap pass, captions, and the failure-mode
+  bed music guidance, the final composition contract (per-beat VO offsets, static music, automatic trim), the final-render On Twos effect, captions, and the failure-mode
   gotchas. Read before the audio mix or debugging a weak render.
