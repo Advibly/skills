@@ -80,8 +80,9 @@ beat map or any prompt:
   SFX in one free `advibly_render_composition` call.
 - **Faithful theme, not brand recolor:** pass `on_brand: false` on every generation. The
   theme's palette is the whole point; the brand-kit board would recolor it. `brand_id` is
-  still **required** on every call (it files the work in the user's library); with `on_brand`
-  false it does not style the output. The brand shows through the real product photo, the
+  still **required** on every call, and the run's `project_id` goes on every call too (together
+  they file the work as one project tile in the user's library); with `on_brand`
+  false neither styles the output. The brand shows through the real product photo, the
   headline copy, and one accent color, never through a stamped logo.
 - **No text-overlay tool.** Every headline is baked in at image generation. If a headline
   degrades, re-roll with `num_images` (up to 4), shorten the words, or try `seedream-5-pro`
@@ -93,7 +94,8 @@ beat map or any prompt:
 - **Tools are deferred.** Load the exact Advibly tool schemas with tool search before the
   first call each session (search "advibly generate image", "advibly generate video",
   "advibly generate voiceover", "advibly generate music", "advibly stitch videos", "advibly
-  get products", "advibly upload asset", "advibly add subtitles"). Confirm parameter names
+  get products", "advibly upload asset", "advibly add subtitles", "advibly create project",
+  "advibly update project"). Confirm parameter names
   and supported durations against what loads rather than assuming.
 
 ## The Advibly asset workflow (memorize)
@@ -140,6 +142,12 @@ One message, only what you still need:
    should chase themselves"). No angle? Propose 2 or 3 from the brand brief and let them pick.
 5. **Length**: default ~32s (6 to 8 shots). 60s is the ceiling: the stitcher takes at most 12
    clips, which is exactly 12 shots at ~5s.
+
+Once the brand is resolved, create the run's project with `advibly_create_project` (`brand_id`
+plus a deliverable-shaped name like "Acme Vox explainer") and pass the returned `project_id` on
+every generate call of the pipeline (bake-off posters, keyframes, clips, voiceover, music, the
+final composition) so the run lands as one tile in the user's library. If the user is continuing
+an earlier run, find its project with `advibly_list_projects` instead of creating a duplicate.
 
 ## PHASE 2: BEAT MAP (the one mandatory approval gate)
 
@@ -233,6 +241,7 @@ only, aspect and resolution.
 advibly_generate_image
   prompt: <5-part collage prompt>
   brand_id: <brand id>
+  project_id: <project id>
   model: <the bake-off winner, "nano-banana-2" by default>
   resolution: "2K"                               # add quality: "high" only if the model is gpt-image-2
   on_brand: false
@@ -259,6 +268,7 @@ color, then the stability constraints.
 advibly_generate_video
   prompt: <5-axis motion prompt, SFX-only audio direction, no spoken words>
   brand_id: <brand id>
+  project_id: <project id>
   model: "gemini-omni-flash"
   aspect_ratio: <9:16 or 16:9>
   duration: <the shot's dur, 4 to 10>
@@ -290,6 +300,7 @@ advibly_generate_video
    ```
    advibly_generate_voiceover
      brand_id: <brand id>
+     project_id: <project id>
      text: <the full narration, beats joined in order; use [pause] between beats
             when a beat's line lands short of its window>
      voice: <the beat map's voice: eve / ara / rex / sal / leo>
@@ -300,6 +311,7 @@ advibly_generate_video
    ```
    advibly_generate_music
      brand_id: <brand id>
+     project_id: <project id>
      prompt: <the beat map's music description + tempo + "modern ad underscore">
      instrumental: true
    ```
@@ -307,7 +319,7 @@ advibly_generate_video
    narration.
 3. **Compose once.** Call `advibly_render_composition` with ordered clips as `scenes` (each
    `volume: 0.3`), `voiceovers: [{source: <VO generation id>}]`, the music generation as `music`,
-   the chosen `aspect_ratio`, and `keep_scene_audio: true`. The default static music level already
+   the chosen `aspect_ratio`, the run's `project_id`, and `keep_scene_audio: true`. The default static music level already
    sits correctly under narration. It returns `status: pending`, `generation_id`, and `edit_url`;
    let the chat widget poll the render.
 4. **Captions (optional, only after composition).** Use `advibly_get_generation` with `wait: true`
@@ -315,6 +327,9 @@ advibly_generate_video
    (`glide`, `fusion`, `glass`). Never caption the SFX-only cut; there is nothing to
    transcribe. Add brand words to `vocabulary` so the transcriber spells them right.
 5. Deliver the result and mention the `edit_url` so the user can fine-tune the ad in the Advibly video editor.
+6. **Set the project cover.** Call `advibly_update_project` with `{ project_id,
+   cover_generation_id: <the final composition's generation id> }` so the project tile shows the
+   finished ad.
 
 ## PHASE 8: OPTIONAL PUBLISH
 
@@ -341,7 +356,7 @@ with the final video. Only offer after the user has seen the finished ad.
   reveals, non-9:16/16:9 aspects, or shots past 10s, and to Kling for real people.
 - **SFX-only clips.** The voiceover and music generate in Phase 7 and mix on top; never let
   a clip speak.
-- **`on_brand: false` always; `brand_id` always; no logo watermark by default.**
+- **`on_brand: false` always; `brand_id` and `project_id` always; no logo watermark by default.**
 - **Self-contained prompts.** Generators have no memory of earlier calls; the style block
   travels verbatim in every image prompt.
 - **On failure:** `content_rejected` means the policy blocked the prompt; rework wording, and

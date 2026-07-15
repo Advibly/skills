@@ -77,7 +77,8 @@ The look, the motion, and the voice are **three separate steps**:
 Tools are deferred. Load the exact Advibly tool schemas with tool search before the first call
 each session (search "advibly generate image", "advibly generate video", "advibly generate
 voiceover", "advibly generate music", "advibly stitch videos", "advibly get generation", "advibly
-get products", "advibly upload asset", "advibly add subtitles"). Confirm parameter names and
+get products", "advibly upload asset", "advibly add subtitles", "advibly create project",
+"advibly update project"). Confirm parameter names and
 supported durations against what loads rather than assuming. The core calls are:
 
 ```text
@@ -103,7 +104,8 @@ asset tool. Pass that URL as a still reference only on product-reveal and CTA fr
 attach it to the problem or mechanism beat or it may leak the package into the hook. Do **not**
 pass `product_id` to the generation tools: it forces edit mode against the raw photo.
 
-Use `brand_id` (required on every call) to file work with the chosen brand. Default
+Use `brand_id` (required on every call) plus the run's `project_id` (pass it on every generate
+call too) to file the work with the chosen brand as one project. Default
 `on_brand: false` for images: the feature-animation palette and the product-photo reference should
 control the art direction. Turn it on only when the user explicitly wants the brand kit to shape
 the setting or palette. Verify the product label against the supplied reference; do not rely on
@@ -120,7 +122,11 @@ Collect only what is still missing. Start with the brand and hero product; infer
 creative defaults from the brand context.
 
 1. Resolve the brand. If several exist, ask which one; if none exist, direct the user to Advibly
-   onboarding.
+   onboarding. Then create the run's project with `advibly_create_project` (`brand_id` plus a
+   deliverable-shaped name like "Acme Pixar-style ad") and pass the returned `project_id` on
+   every generate call in this skill (stills, clips, voiceover, music, the final composition).
+   If the user is continuing an earlier run, find its project with `advibly_list_projects`
+   instead of creating a duplicate.
 2. Read the brand context. Use its audience, approved claims, tone, and proof to choose the
    problem character, the script, and the narrator voice. Fetch a fuller dossier only when a
    claim or objection needs it.
@@ -156,8 +162,8 @@ Ask the user to approve or edit the map. Do not render until they approve.
 ## Phase 3: storyboard stills (mandatory visual approval)
 
 Read `references/storyboard-prompts.md`. Generate one 9:16 still per beat with
-`advibly_generate_image`, `model: "gpt-image-2"`, `quality: "high"`, `on_brand: false`, and
-`num_images: 1`. Poll with `advibly_get_generation` (`wait: true`) when a usable URL is needed
+`advibly_generate_image`, `model: "gpt-image-2"`, `quality: "high"`, `on_brand: false`,
+`num_images: 1`, and the run's `project_id`. Poll with `advibly_get_generation` (`wait: true`) when a usable URL is needed
 downstream.
 
 ```text
@@ -194,6 +200,7 @@ aspect_ratio: "9:16"
 duration: 8
 start_image_url: <approved beat still URL>
 prompt: <beat-specific SFX-only motion prompt>
+project_id: <the run's project id>
 ```
 
 Do not add `reference_image_urls` to these calls. Gemini does not support an end frame; reserve
@@ -211,6 +218,7 @@ Full recipe and gotchas in `references/audio-and-gotchas.md`.
    ```text
    advibly_generate_voiceover
      brand_id: <brand id>
+     project_id: <project id>
      text: <the full narration, beats joined in order; [pause] between beats when a line lands
             short of its 8s window; <slow>...</slow> on the CTA line>
      voice: <the beat map's voice: ara / sal / leo / rex / eve>
@@ -222,9 +230,11 @@ Full recipe and gotchas in `references/audio-and-gotchas.md`.
    (`instrumental: true`). Warm, hopeful, storybook; composition auto-trims it with a tail fade.
 3. **Compose once.** Call `advibly_render_composition` with approved clips as ordered `scenes`
    (each `volume: 0.3`), `voiceovers: [{source: <VO generation id>}]`, the bed as `music`,
-   `aspect_ratio: "9:16"`, and `keep_scene_audio: true`. The default music level already sits
+   `aspect_ratio: "9:16"`, the run's `project_id`, and `keep_scene_audio: true`. The default music level already sits
    correctly under narration. It returns `status: pending`, `generation_id`, and `edit_url`.
 4. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video editor.
+5. Set the finished ad as the project cover: `advibly_update_project` with `{ project_id,
+   cover_generation_id: <the final composition's generation id> }`.
 
 Never ask the video model to bake narration or captions into a clip. Verify the final master has
 no dead silent tail, correct 9:16 framing, a readable product label, and a clean CTA lower third.

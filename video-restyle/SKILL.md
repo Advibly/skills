@@ -124,7 +124,8 @@ line breaks. Keep on-screen copy free of emoji unless asked.
 - **Tools are deferred.** Load the Advibly tool schemas with tool search
   before the first call each session (search "advibly analyze video",
   "advibly generate video", "advibly upload asset", "advibly render composition",
-  "advibly add subtitles"). Confirm parameter names against what loads.
+  "advibly add subtitles", "advibly create project", "advibly update
+  project"). Confirm parameter names against what loads.
 
 ## The identity preservation block (memorize)
 
@@ -156,6 +157,12 @@ One message, only what you still need:
    single continuous talking-head or UGC shot with clear speech.
 2. **Brand**: `advibly_list_brands`. One brand: use it. Several: ask. The
    brand files the work; the template's look is not recolored to the brand.
+   Then create the run's project with `advibly_create_project` (`brand_id`
+   plus a deliverable-shaped name like "Acme podcast-pop restyle") and pass
+   the returned `project_id` on every v2v call and the final composition so
+   the segments land as one tile in the library. If the user is continuing
+   an earlier run, find its project with `advibly_list_projects` instead of
+   creating a duplicate.
 3. **Template**: show the six and let the user pick (details in
    `references/`):
    - **podcast-pop**: the viral podcast-clip edit. Subject cut out as a
@@ -302,6 +309,7 @@ For each segment, compose the prompt in this order:
 advibly_generate_video
   prompt: <identity block + style block + beat timeline + audio line, under 2000 chars>
   brand_id: <brand id>
+  project_id: <project id>
   model: "gemini-omni-flash"
   source_video_url: <that segment's uploaded URL>
   duration: <the segment's real length, rounded UP to a whole second — billing only>
@@ -353,6 +361,7 @@ video's audio runs from the start across the full composition:
 ```
 advibly_render_composition
   brand_id: <brand id>                                            # required
+  project_id: <the run's project id>
   scenes: [<conformed seg-01 url>, <conformed seg-02 url>, ...]   # plan order, max 12
   voiceovers: [{ source: <ORIGINAL video generation id, OR the uploaded source-video URL> }]
   keep_scene_audio: false
@@ -375,7 +384,9 @@ time-stretch the audio to hide drift.
 The call returns `status: pending`, a `generation_id`, and an `edit_url`; the chat widget polls
 the render. Call `advibly_get_generation` with `wait: true` only when a finished URL is needed for
 post captions or publishing. Deliver the result and mention the `edit_url` so the user can
-fine-tune it in the Advibly video editor.
+fine-tune it in the Advibly video editor. Then set the finished cut as the project cover with
+`advibly_update_project` (`project_id` plus `cover_generation_id: <the composition's
+generation id>`).
 
 ## PHASE 7: OPTIONAL EXTRAS
 

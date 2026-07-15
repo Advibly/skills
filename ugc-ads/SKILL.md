@@ -43,6 +43,8 @@ Collect, in order of priority:
    - `problem-solution` - before state, product intro, after state
 5. **Creator description** - brief description (age, gender, vibe). If not provided, match an archetype from `references/characters.md` to the product category. Default: "27-year-old woman, relatable fitness-oriented, not model-perfect."
 
+Once the brand is resolved, create the run's project with `advibly_create_project` (`brand_id` plus a deliverable-shaped name like "Acme UGC testimonial ad") and pass the returned `project_id` on every generate call in this workflow (creator image, storyboard frames, clips, the final composition) so the whole run shows as one tile in the user's library. If the user is continuing an earlier run, find its project with `advibly_list_projects` instead of creating a duplicate.
+
 Do not ask for everything at once. Brand plus angle is enough to start; fill the rest from the brand data and sensible defaults.
 
 ### Step 2 - Generate the creator reference image
@@ -64,12 +66,13 @@ Call:
 ```
 advibly_generate_image
   prompt: <the creator prompt>
+  project_id: <project id>
   model: "gpt-image-2"
   aspect_ratio: "2:3"
   quality: "high"
 ```
 
-Do NOT pass `brand_id` (or pass `on_brand: false` if you do). The creator image must look like a real person's phone photo; brand-kit references would pull it toward branded collateral.
+Do NOT pass `brand_id` (or pass `on_brand: false` if you do). The creator image must look like a real person's phone photo; brand-kit references would pull it toward branded collateral. Do pass the run's `project_id`: it only groups the generation under the project and does not affect the look.
 
 If the call returns `status: pending`, fetch the finished URL with `advibly_get_generation` (`wait: true`). You need this URL for every video call. Show the image to the user; regenerate on request (tweaks to hair, age, outfit, environment are one-line prompt edits).
 
@@ -117,6 +120,7 @@ For each shot:
 ```
 advibly_generate_image
   prompt: <start-frame prompt, see below>
+  project_id: <project id>
   model: "gpt-image-2"
   aspect_ratio: "9:16"
   quality: "high"
@@ -149,6 +153,7 @@ For each approved frame, call `advibly_generate_video` with Gemini Omni Flash in
 advibly_generate_video
   prompt: <shot prompt, see below>
   brand_id: <brand id>
+  project_id: <project id>
   model: "gemini-omni-flash"
   aspect_ratio: "9:16"
   duration: 8
@@ -178,12 +183,14 @@ Execution notes:
 ### Step 6 - Assemble the ad
 
 Call `advibly_render_composition` once with the five generation ids or HTTPS URLs as ordered
-`scenes`, `keep_scene_audio: true`, and `aspect_ratio: "9:16"`. Do not add voiceovers or music:
+`scenes`, `keep_scene_audio: true`, `aspect_ratio: "9:16"`, and the run's `project_id`. Do not add voiceovers or music:
 the creator's native spoken audio belongs to each scene. The tool hard-cuts the clips, returns
 `status: pending`, a `generation_id`, and an `edit_url`. The chat widget polls the render; call
 `advibly_get_generation` with `wait: true` only if a finished URL is required for captions or
 publishing. Deliver the render and mention the `edit_url` so the user can fine-tune the ad in the
-Advibly video editor. Total runtime is about 40 seconds for five 8-second shots.
+Advibly video editor. Then set the finished ad as the project cover with `advibly_update_project`
+(`project_id` plus `cover_generation_id: <the composition's generation id>`). Total runtime is
+about 40 seconds for five 8-second shots.
 
 ### Step 7 - Optional: publish
 

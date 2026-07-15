@@ -90,8 +90,9 @@ beat map or any prompt:
   uses `advibly_render_composition` for the final assembly. Pick **one** narrator voice for the whole ad.
 - **Faithful clay look, not brand recolor:** pass `on_brand: false` on every generation call.
   The claymation aesthetic owns its warm palette; the brand-kit board would recolor it.
-  `brand_id` is still **required** on every call (it files the work in the user's library);
-  with `on_brand` false it does not style the output. The brand shows through the clay product
+  `brand_id` is still **required** on every call, and so is the run's `project_id` (together
+  they file the work as one project tile in the user's library); with `on_brand` false neither
+  styles the output. The brand shows through the clay product
   prop's copied label text, never through a stamped logo.
 - **No text-overlay tool.** The only baked text is the beat-5 clay infographic (sculpted-clay
   letters, rendered by the image model) and any burned-in captions, which go on in the final
@@ -104,7 +105,8 @@ beat map or any prompt:
 - **Tools are deferred.** Load the exact Advibly tool schemas with tool search before the
   first call each session (search "advibly generate image", "advibly generate video", "advibly
   generate voiceover", "advibly generate music", "advibly stitch videos", "advibly get
-  products", "advibly upload asset", "advibly add subtitles"). Confirm parameter names and
+  products", "advibly upload asset", "advibly add subtitles", "advibly create project",
+  "advibly update project"). Confirm parameter names and
   supported durations against what loads rather than assuming.
 
 ## The Advibly asset workflow (memorize)
@@ -154,6 +156,12 @@ One message, only what you still need:
    when the user wants tighter. Use `duration: 10` for every clip unless the user explicitly
    requests another duration.
 6. **Format**: 9:16 (default; rarely changed for this genre).
+
+As soon as the brand is resolved, create the run's project with `advibly_create_project`
+(`brand_id` plus a deliverable-shaped name like "Refirm claymation ad") and pass the returned
+`project_id` on every generate call of the pipeline (stills, clips, voiceover, music, the final
+composition) so the whole run lands as one tile in the user's library. If the user is continuing
+an earlier run, find its project with `advibly_list_projects` instead of creating a duplicate.
 
 Do not ask for everything at once. Brand plus product plus category is enough to start; fill
 the character and settings from the brand data and sensible defaults, then confirm in Phase 2.
@@ -230,6 +238,7 @@ sequentially, not in parallel**, each anchored on the prior approved still.
 advibly_generate_image
   prompt: <the beat's six-block storyboard prompt>
   brand_id: <brand id>
+  project_id: <project id>
   model: "gpt-image-2"                          # nano-banana-2 fallback for a texture-losing beat
   quality: "high"
   on_brand: false
@@ -276,6 +285,7 @@ Select the video model once before the render pass:
 advibly_generate_video
   prompt: <six-block motion prompt, SFX-only ambient, NO Narrator line>
   brand_id: <brand id>
+  project_id: <project id>
   model: <selected model>
   mode: "pro"                                    # Seedance only; omit for Gemini
   aspect_ratio: "9:16"
@@ -319,6 +329,7 @@ Full recipe and gotchas in `references/audio-and-gotchas.md`.
    ```
    advibly_generate_voiceover
      brand_id: <brand id>
+     project_id: <project id>
      text: <the full narration, beats joined in order; [pause] between beats when a line lands
             short of its window>
      voice: <the beat map's voice: ara / sal / leo / rex / eve>
@@ -335,12 +346,15 @@ Full recipe and gotchas in `references/audio-and-gotchas.md`.
 3. **Choose the final cadence.** Smooth is the default. If the user requests stop-motion judder,
    set `frame_cadence: "on_twos"` on the composition call. Do not preprocess the individual clips.
 4. **Compose once.** Call `advibly_render_composition` with clips as ordered `scenes` (each
-   `volume: 0.3`), narration as `voiceovers`, the bed as `music`, the chosen aspect, and
-   `keep_scene_audio: true`. Include `frame_cadence: "on_twos"` only when judder was requested.
+   `volume: 0.3`), narration as `voiceovers`, the bed as `music`, the chosen aspect, the run's
+   `project_id`, and `keep_scene_audio: true`. Include `frame_cadence: "on_twos"` only when judder was requested.
    Give any separate character line its beat's cumulative offset.
    It returns `status: pending`, `generation_id`, and `edit_url`.
 5. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video
    editor. On Twos appears under **Effects** and updates the preview in realtime.
+6. **Set the project cover.** Call `advibly_update_project` with `{ project_id,
+   cover_generation_id: <the final composition's generation id> }` so the project tile in the
+   library shows the finished ad.
 
 ## PHASE 7: CAPTIONS (optional, after the VO is mixed in)
 
@@ -377,7 +391,7 @@ with the final video. Only offer after the user has seen the finished ad.
   the voiceover generates in Phase 6 and mixes on top.
 - **Smooth motion is the default.** Never ask a video model for stop-motion judder; apply the
   final composition's `frame_cadence: "on_twos"` effect only if requested.
-- **`on_brand: false` always; `brand_id` always; no logo watermark.** The brand lives in the
+- **`on_brand: false` always; `brand_id` and `project_id` always; no logo watermark.** The brand lives in the
   copied clay-label text.
 - **Self-contained prompts.** Generators have no memory of earlier calls; the STYLE LOCK and
   MATERIAL DETAIL blocks travel verbatim in every image prompt, the SUBJECT LOCK fragments in

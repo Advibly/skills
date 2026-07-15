@@ -79,8 +79,9 @@ Two shared references:
   `audio_recipe` drive every call. Do not substitute your own art direction.
 - **Faithful style, not brand recolor:** pass `on_brand: false` on every generation. The
   style's palette is the whole point; the brand-kit board would recolor it. `brand_id` is
-  still **required** on every call (it files the work in the user's library); with `on_brand`
-  false it does not style the output. The brand shows through the topic, the product, the
+  still **required** on every call, and the run's `project_id` goes on every call too (together
+  they file the work as one project tile in the user's library); with `on_brand`
+  false neither styles the output. The brand shows through the topic, the product, the
   headline copy, and one accent color, never a stamped logo.
 - **The product is re-rendered INTO the style by default.** Unlike a photoreal-product ad,
   these styles remake everything in their medium: the product becomes clay, a pixel sprite,
@@ -127,7 +128,8 @@ Two shared references:
   each session (search "advibly generate image", "advibly generate video", "advibly generate
   voiceover", "advibly generate music", "advibly stitch videos", "advibly compose video",
   "advibly get products", "advibly upload asset", "advibly add subtitles", "advibly list
-  brands"). Confirm parameter names and supported durations against what loads.
+  brands", "advibly create project", "advibly update project"). Confirm parameter names and
+  supported durations against what loads.
 
 ## The Advibly asset workflow (memorize)
 
@@ -151,6 +153,12 @@ One message, only what you still need:
    hero product is fine; skip the photo and the product beat.
 4. **Format**: 9:16 or 16:9 (ask; default 16:9).
 5. **Length**: default ~15 to 30s. 60s is the ceiling (the stitcher takes at most 12 clips).
+
+Once the brand is resolved, create the run's project with `advibly_create_project` (`brand_id`
+plus a deliverable-shaped name like "Acme whiteboard explainer") and pass the returned
+`project_id` on every generate call of the pipeline (keyframes, clips, voiceover, music, the
+final composition) so the run lands as one tile in the user's library. If the user is continuing
+an earlier run, find its project with `advibly_list_projects` instead of creating a duplicate.
 
 ## PHASE 2: STYLE PICK (the first gate)
 
@@ -205,6 +213,7 @@ the shot's `scene` + the baked `headline` (only on headline shots, treated per t
 advibly_generate_image
   prompt: <image_style_block verbatim> + <scene> + <baked headline if any>
   brand_id: <brand id>
+  project_id: <project id>
   model: <style.recommended_image_model>
   resolution: "2K"            # or quality: "high" if the model is gpt-image-2
   on_brand: false
@@ -232,6 +241,7 @@ and `element_motion` + SFX-only audio direction.
 advibly_generate_video
   prompt: <motion_prompt_dna> + <this shot's camera_move + element_motion> + <SFX-only, no spoken words>
   brand_id: <brand id>
+  project_id: <project id>
   model: <style.recommended_video_model>
   aspect_ratio: <9:16 or 16:9>
   duration: <the shot's dur, recommend 4 to 6; Omni Flash supports 4 to 10>
@@ -268,7 +278,8 @@ Follow `pipeline-and-audio.md`. In short:
    `advibly_generate_music` (`instrumental: true`). A second bed only if the arc clearly turns.
 3. **Compose once.** Call `advibly_render_composition` with ordered clips as `scenes` (use
    `volume: 0.2` for clip SFX), one `voiceovers` entry per shot with `start_seconds` equal to its
-   cumulative offset, the bed as `music`, the chosen aspect, and `keep_scene_audio: true`. **Leave
+   cumulative offset, the bed as `music`, the chosen aspect, the run's `project_id`, and
+   `keep_scene_audio: true`. **Leave
    `music_volume` unset.** For an on-twos style also pass `frame_cadence: "on_twos"`; for a smooth
    style omit it or pass `"smooth"`. The renderer ducks the bed against the narration automatically (it dips
    to ~35% while a line plays and swells back between them), so a hand-set level is not needed and
@@ -276,6 +287,9 @@ Follow `pipeline-and-audio.md`. In short:
    `generation_id`, and `edit_url`; let the chat widget poll it.
 4. Mention the `edit_url` in final delivery so the user can fine-tune the ad in the Advibly video
    editor. On Twos appears under **Effects** and updates the preview in realtime.
+5. **Set the project cover.** Call `advibly_update_project` with `{ project_id,
+   cover_generation_id: <the final composition's generation id> }` so the project tile shows the
+   finished ad.
 
 ## PHASE 7: CAPTIONS (optional)
 
@@ -300,8 +314,8 @@ with the final video. Only offer after the user has seen the finished ad.
   every time. Never lift a style file's example subject or characters (its `example_subject_only` line, or a creature named only to illustrate the look); those are technique illustrations. Same style, different brand should share nothing but
   the look.
 - **One style, one image model, one video model per delivered ad.** Swap the whole set or nothing.
-- **Faithful, not on-brand:** `on_brand: false` always, `brand_id` always, no logo watermark by
-  default.
+- **Faithful, not on-brand:** `on_brand: false` always, `brand_id` and `project_id` always, no
+  logo watermark by default.
 - **Stop-motion styles get `frame_cadence: "on_twos"` on the final composition; smooth styles do not.** The
   video model never holds 12fps on its own.
 - **SFX-only clips.** VO and music generate separately and mix on top; never let a clip speak.
