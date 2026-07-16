@@ -4,11 +4,13 @@ description: >
   Restyle an existing talking-head or UGC video with Gemini Omni Flash video-to-video on the
   Advibly MCP while preserving identity, expressions, lip-sync, and original audio. Analyze and
   segment the source, apply beat-timed prompts using podcast-pop, watercolor, anime-manga,
-  newspaper, notebook-doodle, or neon-vaporwave templates, conform every segment to its source
+  newspaper, notebook-doodle, neon-vaporwave, comic-book, vox-style, psychedelic-swirl,
+  flat-illustration, or cardboard-cutout templates, conform every segment to its source
   length, then reassemble with the original audio. Trigger for "restyle a video", "apply a style
   to this video", "make my talking head look like X", "video style transfer", "turn my video
-  into a cartoon, watercolor, anime, or comic", "podcast-style edit", or a source clip plus a
-  look reference. Use when the requested transformation must retain the person and speech.
+  into a cartoon, watercolor, anime, comic, psychedelic, illustration, or cardboard look",
+  "podcast-style edit", "vox-style edit", or a source clip plus a look reference. Use when the
+  requested transformation must retain the person and speech.
 ---
 
 # Advibly Video Restyle
@@ -163,7 +165,7 @@ One message, only what you still need:
    the segments land as one tile in the library. If the user is continuing
    an earlier run, find its project with `advibly_list_projects` instead of
    creating a duplicate.
-3. **Template**: show the six and let the user pick (details in
+3. **Template**: show the eleven and let the user pick (details in
    `references/`):
    - **podcast-pop**: the viral podcast-clip edit. Subject cut out as a
      sticker, bold rotating backgrounds (kinetic typography, crumpled paper,
@@ -178,6 +180,16 @@ One message, only what you still need:
      doodles, highlighter marks, sticky notes.
    - **neon-vaporwave**: synthwave gradients, neon rim glow, chrome text,
      retro grid horizon.
+   - **comic-book**: pop-art comic repaint, bold ink outlines, Ben-Day
+     halftone dots, starburst backdrops, onomatopoeia bursts, caption boxes.
+   - **vox-style**: subject cut out as a sticker over a bright yellow field
+     of black and off-white Bauhaus geometry, editorial explainer energy.
+   - **psychedelic-swirl**: posterized repaint over liquid marbled rainbow
+     swirls, color inversion flashes, groovy motifs.
+   - **flat-illustration**: clean flat vector-style repaint in an idyllic
+     illustrated scene, soft skies, rolling hills, calm brand-explainer warmth.
+   - **cardboard-cutout**: photoreal subject torn out with a rough cardboard
+     edge on corrugated kraft scenes, packing tape, marker doodles, stamps.
    If the user shows a reference clip instead, match it to the closest
    template and adapt its axes; if nothing fits, compose a custom template
    with the same structure (subject treatment, style block, axes) and confirm
@@ -441,6 +453,16 @@ treatment, the energy moves, a full example prompt, and its failure modes.
 - `references/newspaper-print.md`: cutout on halftone newsprint.
 - `references/notebook-doodle.md`: cutout on notebook paper with ink doodles.
 - `references/neon-vaporwave.md`: cutout in a synthwave neon world.
+- `references/comic-book.md`: full pop-art comic repaint, halftone dots and
+  starbursts.
+- `references/vox-style.md`: cutout on yellow Bauhaus-geometry editorial
+  layouts.
+- `references/psychedelic-swirl.md`: full posterized repaint over liquid
+  rainbow swirls.
+- `references/flat-illustration.md`: full flat vector-style repaint in
+  illustrated scenes.
+- `references/cardboard-cutout.md`: torn-edge cutout on corrugated cardboard
+  craft scenes.
 - `references/pipeline.md`: source probing, proxy and cut recipes, composition assembly, upload
   limits, billing math, the positive-phrasing rule, failure triage. Read
   before debugging anything.
