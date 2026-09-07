@@ -22,6 +22,7 @@ skills/
 | [`stickman-animation`](./stickman-animation/) | Turns a brand into a finished 2D stick-figure comic ad. Locks the STYLE (flat black-outline stick figures on a pure white void, uniform linework, zero shading, snappy limited animation, comic-book VFX, a two-accent color system: the brand's primary color for the product and its energy, gray for an optional problem element) and lets the agent invent a fresh STORY per brief (a problem-to-solution pitch, a one-joke gag, a visual metaphor, a running gag, a slice-of-life; any beat count). Approves an original concept and beat list, renders one flat still per beat (gpt-image-2, anchored on the first still as a style plate), animates each into snappy limited-animation motion that preserves the flat linework (Gemini Omni Flash by default, Seedance 2.0 as an approved fallback, SFX-only), then applies the editor's On Twos effect through `advibly_render_composition` while mixing per-beat narration and music. The product is redrawn as a flat 2D prop, never composited photoreal. An anthropomorphized-problem device (a gremlin, a blob, a "mood cloud") is one optional tool, not a template. |
 | [`collage-motion`](./collage-motion/) | Decode-then-animate pipeline for halftone paper-collage and stop-motion-graphic ads. Reverse-engineers a reference image into a field-editable JSON spec, generates on-brand stills with gpt-image-2 (store products locked via catalog photo references), then animates them into a default 4-scene set of 8s assemble-from-empty clips with Gemini Omni Flash (empty color field, cut-out pieces slide in and snap into place, native audio). The final composition enables the editor's On Twos effect by default. Labels are burned in at generation, faithful to the decoded color field by default. |
 | [`explainer-videos`](./explainer-videos/) | Turns a brand topic or product angle into a narrated animated explainer in one of ten visual styles. Builds an approved beat map, generates styled keyframes, animates each as a recommended 4 to 6-second shot, then composes voiceover, music, and scene audio into the finished video. Gemini Omni Flash is the default motion model, with Seedance used when an exact end-frame landing is required. |
+| [`static-ads`](./static-ads/) | Generates a batch of grounded static (image) ad concepts and renders them with gpt-image-2. Fifteen proven layout templates (headline statement, us vs. them, stat callout, review card, testimonial stack, before and after, problem and solution, founder message, feature or ingredient spotlight, press mention, lifestyle hero, numbered list, FAQ card, competitor callout, origin story) are cycled across the whole batch so template diversity becomes angle diversity. Every concept pulls its copy from the brand's research brief, dossier, product catalog or the user's own reviews and cites the source; nothing is invented. Plans the batch as approvable concept cards first (template, headline, body, visual, grounding), then renders one on-brand image per concept with the copy burned in and the real product attached as a reference for store brands, and delivers an index. Defaults: 15 concepts, 4:5, gpt-image-2 at high quality. |
 | [`video-restyle`](./video-restyle/) | Applies a complete visual style to an EXISTING video (talking head, UGC clip) while keeping the subject's identity, expressions, lip-sync, and original audio. Analyzes the source with advibly_analyze_video (Gemini transcript + cut plan), cuts it locally into 3-10s segments at sentence boundaries, restyles each segment with Gemini Omni Flash video-to-video against one of six templates (podcast-pop sticker-cutout with rotating bold backgrounds, watercolor-wash, anime-manga, newspaper-print, notebook-doodle, neon-vaporwave), stitches the segments back together, then remuxes the original audio track over the result with ffmpeg. Captions are baked per segment; the per-segment look rotation makes the output read as a deliberately edited multi-look cut. |
 
 ## Install
@@ -70,6 +71,11 @@ npx skills add advibly/skills -s video-restyle
 npx skills add advibly/skills -s explainer-videos
 ```
 
+**static-ads**
+```bash
+npx skills add advibly/skills -s static-ads
+```
+
 Install all skills at once:
 ```bash
 npx skills add advibly/skills
@@ -91,6 +97,7 @@ Prefer to install by hand?
   cp -R skills/collage-motion ~/.claude/skills/
   cp -R skills/explainer-videos ~/.claude/skills/
   cp -R skills/video-restyle ~/.claude/skills/
+  cp -R skills/static-ads ~/.claude/skills/
   ```
 
 Then ask Claude for what you want, e.g. `Make a UGC ad for my brand. Angle: testimonial.` or `Reverse-engineer this collage reference and animate it.`
